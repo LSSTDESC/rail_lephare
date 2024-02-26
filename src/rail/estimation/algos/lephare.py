@@ -1,4 +1,4 @@
-import qp
+# import qp
 from rail.estimation.estimator import CatEstimator
 
 class LephareEstimator(CatEstimator):
