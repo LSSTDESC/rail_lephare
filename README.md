@@ -32,7 +32,18 @@ template can not do these for you, otherwise it would :)
 ## RAIL: Redshift Assessment Infrastructure Layers
 
 This package is part of the larger ecosystem of Photometric Redshifts
-in [RAIL](https://github.com/LSSTDESC/RAIL).
+in [RAIL](https://github.com/LSSTDESC/RAIL). This package in particular
+is concerned with wrapping the [LePHARE](https://gitlab.lam.fr/Galaxies/LEPHARE/) template fitting code within RAIL.
+
+### Installation
+
+This package can be installed from source using the following commands:
+```console
+git clone https://github.com/LSSTDESC/rail_lephare.git
+cd rail_lephare
+conda install -c conda-forge pytables sqlite
+pip install '.[dev]'
+```
 
 ### Citing RAIL
 
