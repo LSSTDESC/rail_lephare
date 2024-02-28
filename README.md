@@ -41,7 +41,7 @@ This package can be installed from source using the following commands:
 ```console
 git clone https://github.com/LSSTDESC/rail_lephare.git
 cd rail_lephare
-conda install -c conda-forge pytables sqlite
+conda install -c conda-forge pytables
 pip install '.[dev]'
 ```
 
