@@ -1,5 +1,21 @@
 # import qp
-from rail.estimation.estimator import CatEstimator
+from rail.estimation.estimator import CatEstimator, CatInformer
+
+
+
+class LephareInformer(CatInformer):
+    """Inform stage for LephareEstimator
+    
+    This class will set templates and filters required for the photoz estimation
+    """
+    name = "LephareInformer"
+    config_options = CatInformer.config_options.copy()
+    config_options.update()
+    
+    
+    def run(self):
+        """Compute the best fit prior parameters
+        """
 
 class LephareEstimator(CatEstimator):
     """LePhare-base CatEstimator
