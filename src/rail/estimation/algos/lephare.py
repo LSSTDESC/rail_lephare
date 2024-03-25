@@ -1,6 +1,7 @@
 # import qp
 from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.common_params import SHARED_PARAMS
+import os
 import lephare as lp
 
 
