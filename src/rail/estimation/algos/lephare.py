@@ -1,8 +1,9 @@
-# import qp
 from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.common_params import SHARED_PARAMS
 import os
 import lephare as lp
+import numpy as np
+import qp
 
 
 class LephareInformer(CatInformer):
@@ -30,7 +31,6 @@ class LephareInformer(CatInformer):
         CatInformer.__init__(self, args, comm=comm)
         # Default local parameters
         self.config_file = "lsst.para"
-        print("config file: " + self.config_file)
         self.lephare_config = lp.read_config(self.config_file)
 
     def _set_config(self, lephare_config):
@@ -147,13 +147,79 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
+        # Default local parameters
+        self.config_file = "/Users/rshirley/Documents/github/lincc/rail_lephare/src/rail/estimation/algos/lsst.para"
+        self.lephare_config = lp.read_config(self.config_file)
+        self.photz = lp.PhotoZ(self.lephare_config)
+
+    def open_model(self, **kwargs):
+        CatEstimator.open_model(self, **kwargs)
+        self.modeldict = self.model
+
+    def _estimate_pdf(self, onesource):
+        """Return the pdf of a single source.
+
+        Do we want to resample on RAIL z grid?
+        """
+        # Check this is the best way to access pdf
+        pdf = onesource.pdfmap[len(onesource.pdfmap) - 1]
+        # return the PDF as an array alongside lephare native zgrid
+        return np.array(pdf.vPDF), np.array(pdf.xaxis)
 
     def _process_chunk(self, start, end, data, first):
-        """Placeholder for the estimation calculation"""
+        """Process an individual chunk of sources using lephare
 
-        # some calculations take place here
-        # pdfs = lephare.estimate(data)
-        # qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-
+        Run the equivalent of zphota and get the PDF for every source.
+        """
         # write the results of estimation for this chunk of data
-        # self._do_chunk_output(qp_dstn, start, end, first)
+        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
+
+        nz = len(self.zgrid)
+        ng = data["redshift"].shape[0]
+        flux = np.array([data["mag_{}_lsst".format(b)] for b in "ugrizy"]).T
+        flux_err = np.array([data["mag_err_{}_lsst".format(b)] for b in "ugrizy"]).T
+        zspec = data["redshift"]
+
+        pdfs = []  # np.zeros((ng, nz))
+        zmode = np.zeros(ng)
+        zmean = np.zeros(ng)
+        # What are tb and todds?
+        # tb = np.zeros(ng)
+        # todds = np.zeros(ng)
+        zgrid = self.zgrid
+
+        # Loop over all ng galaxies!
+        srclist = []
+        for i in range(ng):
+            oneObj = lp.onesource(i, self.photz.gridz)
+            oneObj.readsource(str(i), flux[i], flux_err[i], 63, zspec[i], " ")
+            self.photz.prep_data(oneObj)
+            srclist.append(oneObj)
+
+        # Run autoadapt to improve zero points
+        a0, a1 = self.photz.run_autoadapt(srclist)
+        offsets = ",".join(np.array(a0).astype(str))
+        offsets = "# Offsets from auto-adapt: " + offsets + "\n"
+
+        photozlist = []
+        for i in range(ng):
+            oneObj = lp.onesource(i, self.photz.gridz)
+            oneObj.readsource(str(i), flux[i], flux_err[i], 63, zspec[i], " ")
+            self.photz.prep_data(oneObj)
+            photozlist.append(oneObj)
+
+        self.photz.run_photoz(photozlist, a0, a1)
+
+        for i in range(ng):
+            pdf, zgrid = self._estimate_pdf(photozlist[i])
+            pdfs.append(pdf)
+            # Take median incase multiple probability densities are equal
+            # TODO: why is that happening?
+            zmode[i] = np.median(
+                zgrid[np.where(pdfs[i] == np.max(pdfs[i]))[0].astype(int)]
+            )
+            zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
+
+        qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=np.array(pdfs)))
+
+        self._do_chunk_output(qp_dstn, start, end, first)
