@@ -29,7 +29,7 @@ AGE_RANGE  0.,15.e9                                     # Age Min-Max in yr
 
 # 
 FILTER_REP   $LEPHAREDIR/filt           # Repository in which the filters are stored
-FILTER_LIST   lsst/filter_u.dat,lsst/filter_g.dat,lsst/filter_r.dat,lsst/filter_i.dat,lsst/filter_z.dat,lsst/filter_y.dat
+FILTER_LIST   lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb
 TRANS_TYPE	 1			# TRANSMISSION TYPE
                                         # 0[-def]: Energy, 1: Nb of photons
 FILTER_CALIB    0,0,0,0,0,0             # 0[-def]:  fnu=ctt 

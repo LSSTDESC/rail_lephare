@@ -30,7 +30,9 @@ class LephareInformer(CatInformer):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
         # Default local parameters
-        self.config_file = "lsst.para"
+        self.config_file = "{}/{}".format(
+            os.path.dirname(os.path.abspath(__file__)), "lsst.para"
+        )
         self.lephare_config = lp.read_config(self.config_file)
 
     def _set_config(self, lephare_config):
@@ -147,14 +149,18 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
+
         # Default local parameters
-        self.config_file = "/Users/rshirley/Documents/github/lincc/rail_lephare/src/rail/estimation/algos/lsst.para"
+        self.config_file = "{}/{}".format(
+            os.path.dirname(os.path.abspath(__file__)), "lsst.para"
+        )
         self.lephare_config = lp.read_config(self.config_file)
         self.photz = lp.PhotoZ(self.lephare_config)
+        print("init")
 
-    def open_model(self, **kwargs):
-        CatEstimator.open_model(self, **kwargs)
-        self.modeldict = self.model
+    # def open_model(self, **kwargs):
+    #     CatEstimator.open_model(self, **kwargs)
+    #     self.modeldict = self.model
 
     def _estimate_pdf(self, onesource):
         """Return the pdf of a single source.
@@ -162,7 +168,7 @@ class LephareEstimator(CatEstimator):
         Do we want to resample on RAIL z grid?
         """
         # Check this is the best way to access pdf
-        pdf = onesource.pdfmap[len(onesource.pdfmap) - 1]
+        pdf = onesource.pdfmap[11]  # 11 = Bayesian galaxy redshift
         # return the PDF as an array alongside lephare native zgrid
         return np.array(pdf.vPDF), np.array(pdf.xaxis)
 
@@ -200,6 +206,7 @@ class LephareEstimator(CatEstimator):
         a0, a1 = self.photz.run_autoadapt(srclist)
         offsets = ",".join(np.array(a0).astype(str))
         offsets = "# Offsets from auto-adapt: " + offsets + "\n"
+        print(offsets)
 
         photozlist = []
         for i in range(ng):
@@ -221,5 +228,5 @@ class LephareEstimator(CatEstimator):
             zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
 
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=np.array(pdfs)))
-
+        qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean))
         self._do_chunk_output(qp_dstn, start, end, first)
