@@ -17,6 +17,7 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
+    "lephare",
     "pz-rail-base",
     "qp-prob[full]",
 ]
