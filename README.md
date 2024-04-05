@@ -2,7 +2,7 @@
 
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 [![codecov](https://codecov.io/gh/LSSTDESC/pz-rail-lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/pz-rail-lephare)
-[![PyPI](https://img.shields.io/pypi/v/lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/lephare/)
+[![PyPI](https://img.shields.io/pypi/v/lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/pz-rail-lephare/)
 
 ## TODO List
 
@@ -18,7 +18,7 @@ template can not do these for you, otherwise it would :)
   - ~~Go here, https://github.com/apps/codecov, click the "Configure" button~~
 - ~~Log in to PyPI.org and configure Trusted Publishing following these instructions https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/~~
 - ~~Create a Personal Access Token (PAT) to automatically add issues to the RAIL project tracker~~
-  - ~~Follow these instruction to create a PAT: https://github.com/actions/add-to-project#creating-a-pat-and-adding-it-to-your-repository ~~
+  - ~~Follow these instruction to create a PAT: https://github.com/actions/add-to-project#creating-a-pat-and-adding-it-to-your-repository~~
   - ~~Save your new PAT as a repository secret named `ADD_TO_PROJECT_PAT`~~
 
 ### Before including in Rail ecosystem
