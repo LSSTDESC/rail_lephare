@@ -199,6 +199,28 @@ class LephareEstimator(CatEstimator):
         # return the PDF as an array alongside lephare native zgrid
         return np.array(pdf.vPDF), np.array(pdf.xaxis)
 
+        # Default local parameters
+        self.config_file = "{}/{}".format(
+            os.path.dirname(os.path.abspath(__file__)), "lsst.para"
+        )
+        self.lephare_config = lp.read_config(self.config_file)
+        self.photz = lp.PhotoZ(self.lephare_config)
+        print("init")
+
+    # def open_model(self, **kwargs):
+    #     CatEstimator.open_model(self, **kwargs)
+    #     self.modeldict = self.model
+
+    def _estimate_pdf(self, onesource):
+        """Return the pdf of a single source.
+
+        Do we want to resample on RAIL z grid?
+        """
+        # Check this is the best way to access pdf
+        pdf = onesource.pdfmap[11]  # 11 = Bayesian galaxy redshift
+        # return the PDF as an array alongside lephare native zgrid
+        return np.array(pdf.vPDF), np.array(pdf.xaxis)
+
     def _process_chunk(self, start, end, data, first):
         """Process an individual chunk of sources using lephare
 
