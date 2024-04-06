@@ -4,30 +4,16 @@
 [![codecov](https://codecov.io/gh/LSSTDESC/pz-rail-lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/pz-rail-lephare)
 [![PyPI](https://img.shields.io/pypi/v/lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/lephare/)
 
-## TODO List
+## RAIL LePHARE
 
-To ensure that your project and repository is stable from the very start there 
-are a few todo items that you should take care of. Unfortunately the RAIL project
-template can not do these for you, otherwise it would :) 
+This package allows users to run the [LePHARE code](https://github.com/lephare-photoz/lephare/) 
+through [RAIL](https://github.com/LSSTDESC/RAIL). 
+It can be installed via pip with the following command. 
+Full documentation is available at the main [LePHARE documentation](https://lephare.readthedocs.io/en/latest/index.html).
 
-### Immediate actions
-- ~~In your repository settings:~~
-  -  ~~Grant the `LSSTDESC/rail_admin` group administrator access~~
-  -  ~~Grant the `LSSTDESC/photo-z` group maintainer access~~
-- ~~Configure Codecov for the repository~~
-  - ~~Go here, https://github.com/apps/codecov, click the "Configure" button~~
-- ~~Log in to PyPI.org and configure Trusted Publishing following these instructions https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/~~
-- ~~Create a Personal Access Token (PAT) to automatically add issues to the RAIL project tracker~~
-  - ~~Follow these instruction to create a PAT: https://github.com/actions/add-to-project#creating-a-pat-and-adding-it-to-your-repository ~~
-  - ~~Save your new PAT as a repository secret named `ADD_TO_PROJECT_PAT`~~
-
-### Before including in Rail ecosystem
-- ~~Make sure your `main` branch is protected~~
-- Update this README
-- ~~Create an example notebook~~
-- ~~Run `pylint` on your code~~
-- Remove this TODO list once all items are completed
-
+```console
+pip install pz-rail-lephare
+```
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
@@ -35,14 +21,14 @@ This package is part of the larger ecosystem of Photometric Redshifts
 in [RAIL](https://github.com/LSSTDESC/RAIL). This package in particular
 is concerned with wrapping the [LePHARE](https://gitlab.lam.fr/Galaxies/LEPHARE/) template fitting code within RAIL.
 
-### Installation
+### Developer installation
 
-This package can be installed from source using the following commands:
+This package can be installed from source using the following commands to allow working on the code.
 ```console
 git clone https://github.com/LSSTDESC/rail_lephare.git
 cd rail_lephare
 conda install -c conda-forge pytables
-pip install '.[dev]'
+pip install -e '.[dev]'
 ```
 
 ### Citing RAIL
