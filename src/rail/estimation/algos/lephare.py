@@ -32,7 +32,7 @@ class LephareInformer(CatInformer):
         ),
         star_sed=Param(
             str,
-            "$LEPHAREDIR/examples/STAR_MOD_ALL.list",
+            "$LEPHAREDIR/sed/STAR/STAR_MOD_ALL.list",
             msg="Path to text file containing list of star SED templates",
         ),
         qso_sed=Param(
@@ -146,6 +146,8 @@ class LephareInformer(CatInformer):
 
         # Get number of sources
         ngal = len(training_data[self.config.ref_band])
+
+        lp.data_retrieval.get_auxiliary_data(keymap=self.lephare_config)
 
         # The three main lephare specific inform tasks
         self._create_filter_library()
