@@ -93,41 +93,6 @@ class LephareInformer(CatInformer):
         """
         self.lephare_config = lephare_config
 
-    def _create_filter_library(self):
-        """Make the filter library files in lephare format"""
-        # load filters from config file
-        filterLib = lp.FilterSvc.from_config(self.config["lephare_config_file"])
-        # Get location to store filter files
-        filter_output = os.path.join(
-            os.environ["LEPHAREWORK"], "filt", self.lephare_config["FILTER_FILE"].value
-        )
-        # Write filter files
-        lp.write_output_filter(
-            filter_output + ".dat", filter_output + ".doc", filterLib
-        )
-
-    def _create_sed_library(self):
-        """Make the SED binary library files in lephare format.
-
-        We separately create the star, quasar and galaxy libraries.
-        """
-        sedlib = lp.Sedtolib(config_keymap=self.lephare_config)
-        sedlib.run(typ="STAR", star_sed=self.config["star_sed"])
-        sedlib.run(typ="GAL", gal_sed=self.config["gal_sed"])
-        sedlib.run(typ="QSO", qso_sed=self.config["qso_sed"])
-
-    def _create_mag_library(self):
-        """Make the magnitudes library file in lephare format.
-
-        We separately create the star, quasar and galaxy libraries.
-
-        TODO: replace hardcoded config options with class config options.
-        """
-        maglib = lp.MagGal(config_keymap=self.lephare_config)
-        maglib.run(typ="STAR", **self.config["star_mag_dict"])
-        maglib.run(typ="GAL", **self.config["gal_mag_dict"])
-        maglib.run(typ="QSO", **self.config["qso_mag_dict"])
-
     def run(self):
         """Run rail_lephare inform stage.
 
@@ -148,9 +113,7 @@ class LephareInformer(CatInformer):
         ngal = len(training_data[self.config.ref_band])
 
         # The three main lephare specific inform tasks
-        self._create_filter_library()
-        self._create_sed_library()
-        self._create_mag_library()
+        lp.prepare(self.lephare_config)
 
         # Spectroscopic redshifts
         self.szs = training_data[self.config.redshift_col]
