@@ -4,6 +4,7 @@ from ceci.config import StageParameter as Param
 import os
 import lephare as lp
 import numpy as np
+from astropy.table import Table
 import qp
 
 
@@ -67,7 +68,7 @@ class LephareInformer(CatInformer):
     def __init__(self, args, comm=None):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
-        self.lephare_config = lp.read_config(self.config["lephare_config"])
+        self.lephare_config = self.config["lephare_config"]
 
     def _set_config(self, lephare_config):
         """Update the lephare config
@@ -98,8 +99,6 @@ class LephareInformer(CatInformer):
         # Get number of sources
         ngal = len(training_data[self.config.ref_band])
 
-        lp.data_retrieval.get_auxiliary_data(keymap=self.lephare_config)
-
         # The three main lephare specific inform tasks
         lp.prepare(
             self.lephare_config,
@@ -113,8 +112,12 @@ class LephareInformer(CatInformer):
 
         # Run auto adapt on training sample
 
+        # We must make a string dictionary to allow pickling and saving
+        config_text_dict = dict()
+        for k in self.config["lephare_config"]:
+            config_text_dict[k] = self.config["lephare_config"][k].value
         # Give principle inform config 'model' to instance.
-        self.model = dict(lephare_config=self.config["lephare_config"])
+        self.model = dict(lephare_config=config_text_dict)
         self.add_data("model", self.model)
 
 
@@ -135,16 +138,31 @@ class LephareEstimator(CatEstimator):
         ref_band=SHARED_PARAMS,
         err_bands=SHARED_PARAMS,
         redshift_col=SHARED_PARAMS,
-        lephare_config_file=Param(
-            str,
-            "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para"),
-            msg="Path to the lephare config in .para format",
+        lephare_config=Param(
+            dict,
+            lp.read_config(
+                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
+            ),
+            msg="The lephare config keymap.",
+        ),
+        output_keys=Param(
+            list,
+            ["Z_BEST", "ZQ_BEST", "MOD_STAR"],
+            msg="The output keys to add to ancil. These must be in the output para file.",
+        ),
+        offsets=Param(
+            list,
+            [None, None],
+            msg=(
+                "The offsets to apply to photometry. If set to None "
+                "autoadapt will be run if that key is set in the config."
+            ),
         ),
     )
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
-        self.lephare_config = lp.read_config(self.config["lephare_config_file"])
+        self.lephare_config = self.config["lephare_config"]
         self.photz = lp.PhotoZ(self.lephare_config)
 
     def _estimate_pdf(self, onesource):
@@ -157,6 +175,39 @@ class LephareEstimator(CatEstimator):
         # return the PDF as an array alongside lephare native zgrid
         return np.array(pdf.vPDF), np.array(pdf.xaxis)
 
+    def _rail_to_lephare_input(self, data):
+        """Take the rail data input and convert it to that expected by lephare
+
+        Parameters
+        ==========
+        data : pandas
+            The RAIL input data chunk
+
+        Returns
+        =======
+        input : astropy.table.Table
+            The lephare input
+
+
+        """
+        ng = data["redshift"].shape[0]
+        # Make input catalogue in standard lephare format
+        input = Table()
+        try:
+            input["id"] = data["id"]
+        except KeyError:
+            input["id"] = np.arange(ng)
+        # Add all available magnitudes
+        for k in data.keys():
+            if k.startswith("mag_err"):
+                input[k.replace("mag_err", "mag")] = data[k.replace("mag_err", "mag")].T
+                input[k] = data[k].T
+        # Set context to use all bands
+        input["context"] = np.sum([2**n for n in np.arange(ng)])
+        input["zspec"] = data["redshift"]
+        input["string_data"] = " "
+        return input
+
     def _process_chunk(self, start, end, data, first):
         """Process an individual chunk of sources using lephare
 
@@ -164,44 +215,19 @@ class LephareEstimator(CatEstimator):
         """
         # write the results of estimation for this chunk of data
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
+        input = self._rail_to_lephare_input(data)
+        if self.config["offsets"][0] is None:
+            offsets = None
+        else:
+            offsets = self.config["offsets"]
+        output, pdfs, zgrid = lp.process(self.lephare_config, input, offsets=offsets)
+        self.zgrid = zgrid
 
-        nz = len(self.zgrid)
         ng = data["redshift"].shape[0]
-        flux = np.array([data["mag_{}_lsst".format(b)] for b in "ugrizy"]).T
-        flux_err = np.array([data["mag_err_{}_lsst".format(b)] for b in "ugrizy"]).T
-        zspec = data["redshift"]
-
-        pdfs = []  # np.zeros((ng, nz))
         zmode = np.zeros(ng)
         zmean = np.zeros(ng)
-        zgrid = self.zgrid
-
-        # Loop over all ng galaxies!
-        srclist = []
-        for i in range(ng):
-            oneObj = lp.onesource(i, self.photz.gridz)
-            oneObj.readsource(str(i), flux[i], flux_err[i], 63, zspec[i], " ")
-            self.photz.prep_data(oneObj)
-            srclist.append(oneObj)
-
-        # Run autoadapt to improve zero points
-        a0, a1 = self.photz.run_autoadapt(srclist)
-        offsets = ",".join(np.array(a0).astype(str))
-        offsets = "# Offsets from auto-adapt: " + offsets + "\n"
-        print(offsets)
-
-        photozlist = []
-        for i in range(ng):
-            oneObj = lp.onesource(i, self.photz.gridz)
-            oneObj.readsource(str(i), flux[i], flux_err[i], 63, zspec[i], " ")
-            self.photz.prep_data(oneObj)
-            photozlist.append(oneObj)
-
-        self.photz.run_photoz(photozlist, a0, a1)
 
         for i in range(ng):
-            pdf, zgrid = self._estimate_pdf(photozlist[i])
-            pdfs.append(pdf)
             # Take median in case multiple probability densities are equal
             zmode[i] = np.median(
                 zgrid[np.where(pdfs[i] == np.max(pdfs[i]))[0].astype(int)]
@@ -209,5 +235,9 @@ class LephareEstimator(CatEstimator):
             zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
 
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=np.array(pdfs)))
-        qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean))
+        ancil = dict(zmode=zmode, zmean=zmean)
+        # Add the requested outputs.
+        for c in self.config["output_keys"]:
+            ancil[c] = np.array(output[c])
+        qp_dstn.set_ancil(ancil)
         self._do_chunk_output(qp_dstn, start, end, first)
