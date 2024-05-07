@@ -98,6 +98,8 @@ class LephareInformer(CatInformer):
         # Get number of sources
         ngal = len(training_data[self.config.ref_band])
 
+        lp.data_retrieval.get_auxiliary_data(keymap=self.lephare_config)
+
         # The three main lephare specific inform tasks
         lp.prepare(
             self.lephare_config,
