@@ -25,63 +25,49 @@ class LephareInformer(CatInformer):
         err_bands=SHARED_PARAMS,
         ref_band=SHARED_PARAMS,
         redshift_col=SHARED_PARAMS,
-        lephare_config_file=Param(
-            str,
-            "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para"),
-            msg="Path to the lephare config in .para format",
-        ),
-        star_sed=Param(
-            str,
-            "$LEPHAREDIR/examples/STAR_MOD_ALL.list",
-            msg="Path to text file containing list of star SED templates",
-        ),
-        qso_sed=Param(
-            str,
-            "$LEPHAREDIR/sed/QSO/SALVATO09/AGN_MOD.list",
-            msg="Path to text file containing list of galaxy SED templates",
-        ),
-        gal_sed=Param(
-            str,
-            "$LEPHAREDIR/examples/COSMOS_MOD.list",
-            msg="Path to text file containing list of quasar SED templates",
-        ),
-        star_mag_dict=Param(
+        lephare_config=Param(
             dict,
-            dict(
-                lib_ascii="YES",
+            lp.read_config(
+                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
             ),
-            msg="Dictionary of values sent to MagGal for stars",
+            msg="The lephare config keymap.",
         ),
-        gal_mag_dict=Param(
+        star_config=Param(
+            dict,
+            dict(LIB_ASCII=lp.keyword("LIB_ASCII", "YES")),
+            msg="Star config overrides.",
+        ),
+        gal_config=Param(
             dict,
             dict(
-                lib_ascii="YES",
-                mod_extinc="18,26,26,33,26,33,26,33",
-                extinc_law=(
+                LIB_ASCII=lp.keyword("LIB_ASCII", "YES"),
+                MOD_EXTINC=lp.keyword("MOD_EXTINC", "18,26,26,33,26,33,26,33"),
+                EXTINC_LAW=lp.keyword(
+                    "EXTINC_LAW",
                     "SMC_prevot.dat,SB_calzetti.dat,"
-                    "SB_calzetti_bump1.dat,SB_calzetti_bump2.dat"
+                    "SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
                 ),
-                em_lines="EMP_UV",
-                em_dispersion="0.5,0.75,1.,1.5,2.",
+                EM_LINES=lp.keyword("EM_LINES", "EMP_UV"),
+                EM_DISPERSION=lp.keyword("EM_DISPERSION", "0.5,0.75,1.,1.5,2."),
             ),
-            msg="Dictionary of values sent to MagGal for galaxies",
+            msg="Galaxy config overrides.",
         ),
-        qso_mag_dict=Param(
+        qso_config=Param(
             dict,
             dict(
-                lib_ascii="YES",
-                mod_extinc="0,1000",
-                eb_v="0.,0.1,0.2,0.3",
-                extinc_law="SB_calzetti.dat",
+                LIB_ASCII=lp.keyword("LIB_ASCII", "YES"),
+                MOD_EXTINC=lp.keyword("MOD_EXTINC", "0,1000"),
+                EB_V=lp.keyword("EB_V", "0.,0.1,0.2,0.3"),
+                EXTINC_LAW=lp.keyword("EXTINC_LAW", "SB_calzetti.dat"),
             ),
-            msg="Dictionary of values sent to MagGal for quasars",
+            msg="QSO config overrides.",
         ),
     )
 
     def __init__(self, args, comm=None):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
-        self.lephare_config = lp.read_config(self.config["lephare_config_file"])
+        self.lephare_config = lp.read_config(self.config["lephare_config"])
 
     def _set_config(self, lephare_config):
         """Update the lephare config
@@ -113,13 +99,20 @@ class LephareInformer(CatInformer):
         ngal = len(training_data[self.config.ref_band])
 
         # The three main lephare specific inform tasks
-        lp.prepare(self.lephare_config)
+        lp.prepare(
+            self.lephare_config,
+            star_config=self.config["star_config"],
+            gal_config=self.config["gal_config"],
+            qso_config=self.config["qso_config"],
+        )
 
         # Spectroscopic redshifts
         self.szs = training_data[self.config.redshift_col]
 
+        # Run auto adapt on training sample
+
         # Give principle inform config 'model' to instance.
-        self.model = dict(lephare_config_file=self.config["lephare_config_file"])
+        self.model = dict(lephare_config=self.config["lephare_config"])
         self.add_data("model", self.model)
 
 
