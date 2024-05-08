@@ -111,13 +111,17 @@ class LephareInformer(CatInformer):
         self.szs = training_data[self.config.redshift_col]
 
         # Run auto adapt on training sample
+        input = _rail_to_lephare_input(
+            training_data, self.config["bands"], self.config["err_bands"]
+        )
+        a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
 
         # We must make a string dictionary to allow pickling and saving
         config_text_dict = dict()
         for k in self.config["lephare_config"]:
             config_text_dict[k] = self.config["lephare_config"][k].value
         # Give principle inform config 'model' to instance.
-        self.model = dict(lephare_config=config_text_dict)
+        self.model = dict(lephare_config=config_text_dict, offsets=[a0, a1])
         self.add_data("model", self.model)
 
 
@@ -152,7 +156,7 @@ class LephareEstimator(CatEstimator):
         ),
         offsets=Param(
             list,
-            [None, None],
+            [],
             msg=(
                 "The offsets to apply to photometry. If set to None "
                 "autoadapt will be run if that key is set in the config."
@@ -175,39 +179,6 @@ class LephareEstimator(CatEstimator):
         # return the PDF as an array alongside lephare native zgrid
         return np.array(pdf.vPDF), np.array(pdf.xaxis)
 
-    def _rail_to_lephare_input(self, data):
-        """Take the rail data input and convert it to that expected by lephare
-
-        Parameters
-        ==========
-        data : pandas
-            The RAIL input data chunk
-
-        Returns
-        =======
-        input : astropy.table.Table
-            The lephare input
-
-
-        """
-        ng = data["redshift"].shape[0]
-        # Make input catalogue in standard lephare format
-        input = Table()
-        try:
-            input["id"] = data["id"]
-        except KeyError:
-            input["id"] = np.arange(ng)
-        # Add all available magnitudes
-        for k in data.keys():
-            if k.startswith("mag_err"):
-                input[k.replace("mag_err", "mag")] = data[k.replace("mag_err", "mag")].T
-                input[k] = data[k].T
-        # Set context to use all bands
-        input["context"] = np.sum([2**n for n in np.arange(ng)])
-        input["zspec"] = data["redshift"]
-        input["string_data"] = " "
-        return input
-
     def _process_chunk(self, start, end, data, first):
         """Process an individual chunk of sources using lephare
 
@@ -215,8 +186,10 @@ class LephareEstimator(CatEstimator):
         """
         # write the results of estimation for this chunk of data
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
-        input = self._rail_to_lephare_input(data)
-        if self.config["offsets"][0] is None:
+        input = _rail_to_lephare_input(
+            data, self.config["bands"], self.config["err_bands"]
+        )
+        if not self.config["offsets"]:
             offsets = None
         else:
             offsets = self.config["offsets"]
@@ -241,3 +214,36 @@ class LephareEstimator(CatEstimator):
             ancil[c] = np.array(output[c])
         qp_dstn.set_ancil(ancil)
         self._do_chunk_output(qp_dstn, start, end, first)
+
+
+def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
+    """Take the rail data input and convert it to that expected by lephare
+
+    Parameters
+    ==========
+    data : pandas
+        The RAIL input data chunk
+
+    Returns
+    =======
+    input : astropy.table.Table
+        The lephare input
+
+
+    """
+    ng = data["redshift"].shape[0]
+    # Make input catalogue in standard lephare format
+    input = Table()
+    try:
+        input["id"] = data["id"]
+    except KeyError:
+        input["id"] = np.arange(ng)
+    # Add all available magnitudes
+    for n in np.arange(len(bands)):
+        input[mag_cols[n]] = data[mag_cols[n]].T
+        input[mag_err_cols[n]] = data[mag_err_cols[n]].T
+    # Set context to use all bands
+    input["context"] = np.sum([2**n for n in np.arange(ng)])
+    input["zspec"] = data["redshift"]
+    input["string_data"] = " "
+    return input
