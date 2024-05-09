@@ -6,6 +6,7 @@ import os
 from rail.core.stage import RailStage
 import matplotlib.pyplot as plt
 import tables_io
+import pytest
 
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
