@@ -6,6 +6,7 @@ import lephare as lp
 import numpy as np
 from astropy.table import Table
 import qp
+import importlib
 
 
 class LephareInformer(CatInformer):
@@ -69,6 +70,8 @@ class LephareInformer(CatInformer):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
+        # We create a run directory with the informer name
+        self.run_dir = _set_run_dir(self.config["name"])
 
     def _set_config(self, lephare_config):
         """Update the lephare config
@@ -112,16 +115,21 @@ class LephareInformer(CatInformer):
 
         # Run auto adapt on training sample
         input = _rail_to_lephare_input(
-            training_data, self.config["bands"], self.config["err_bands"]
+            training_data, self.config.bands, self.config.err_bands
         )
-        a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
-
+        if self.config["lephare_config"]["AUTO_ADAPT"].value == "YES":
+            a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
+            offsets = [a0, a1]
+        else:
+            offsets = None
         # We must make a string dictionary to allow pickling and saving
         config_text_dict = dict()
         for k in self.config["lephare_config"]:
             config_text_dict[k] = self.config["lephare_config"][k].value
         # Give principle inform config 'model' to instance.
-        self.model = dict(lephare_config=config_text_dict, offsets=[a0, a1])
+        self.model = dict(
+            lephare_config=config_text_dict, offsets=offsets, run_dir=self.run_dir
+        )
         self.add_data("model", self.model)
 
 
@@ -133,9 +141,6 @@ class LephareEstimator(CatEstimator):
 
     # Add Lephare-specific configuration options here
     config_options.update(
-        zmin=SHARED_PARAMS,
-        zmax=SHARED_PARAMS,
-        nzbins=SHARED_PARAMS,
         nondetect_val=SHARED_PARAMS,
         mag_limits=SHARED_PARAMS,
         bands=SHARED_PARAMS,
@@ -158,7 +163,7 @@ class LephareEstimator(CatEstimator):
             list,
             [],
             msg=(
-                "The offsets to apply to photometry. If set to None "
+                "The offsets to apply to photometry. If empty "
                 "autoadapt will be run if that key is set in the config."
             ),
         ),
@@ -168,6 +173,13 @@ class LephareEstimator(CatEstimator):
         CatEstimator.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
         self.photz = lp.PhotoZ(self.lephare_config)
+        Z_STEP = self.lephare_config["Z_STEP"].value
+        self.zstep = float(Z_STEP.split(",")[0])
+        self.zmin = float(Z_STEP.split(",")[1])
+        self.zmax = float(Z_STEP.split(",")[2])
+        self.nzbins = int((self.zmax - self.zmin) / self.zstep)
+        self.run_dir = self.model["run_dir"]
+        _update_lephare_env(None, self.run_dir)
 
     def _estimate_pdf(self, onesource):
         """Return the pdf of a single source.
@@ -184,19 +196,20 @@ class LephareEstimator(CatEstimator):
 
         Run the equivalent of zphota and get the PDF for every source.
         """
-        # write the results of estimation for this chunk of data
-        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
-        input = _rail_to_lephare_input(
-            data, self.config["bands"], self.config["err_bands"]
-        )
-        if not self.config["offsets"]:
-            offsets = None
-        else:
+        # Create the lephare input table
+        input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
+        # Set the desired offsets estimate config overide lephare config overide inform offsets
+        if self.config["offsets"]:
             offsets = self.config["offsets"]
+        elif self.config["lephare_config"]["AUTO_ADAPT"].value == "YES":
+            a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
+            offsets = [a0, a1]
+        elif not self.config["offsets"]:
+            offsets = self.model["offsets"]
         output, pdfs, zgrid = lp.process(self.lephare_config, input, offsets=offsets)
         self.zgrid = zgrid
 
-        ng = data["redshift"].shape[0]
+        ng = data[self.config.bands[0]].shape[0]
         zmode = np.zeros(ng)
         zmean = np.zeros(ng)
 
@@ -239,7 +252,7 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
     except KeyError:
         input["id"] = np.arange(ng)
     # Add all available magnitudes
-    for n in np.arange(len(bands)):
+    for n in np.arange(len(mag_cols)):
         input[mag_cols[n]] = data[mag_cols[n]].T
         input[mag_err_cols[n]] = data[mag_err_cols[n]].T
     # Set context to use all bands
@@ -247,3 +260,40 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
     input["zspec"] = data["redshift"]
     input["string_data"] = " "
     return input
+
+
+def _update_lephare_env(lepharedir, lepharework):
+    """Update the environment variables and reset the lephare package.
+
+    We may be using the same Python session to run inform with different
+    settings. These produce intermediate files which are distinct and we must
+    use different runs.
+
+    This simple function updates the environment variables and reloads lephare
+    to ensure they are properly used.
+    """
+    if lepharedir is not None:
+        os.environ["LEPHAREDIR"] = lepharedir
+    if lepharework is not None:
+        os.environ["LEPHAREWORK"] = lepharework
+    importlib.reload(lp)
+
+
+def _set_run_dir(name=None):
+    """Create a named run if it doesn't exist otherwise set it to existing.
+
+    lephare has the functionality to set a timed or named run. In general we
+    must ensure that each inform run has a distinct run to ensure that
+    intermediate files are not overwritten.
+
+    Parameters
+    ==========
+    name : str
+        The name to set the run. We may want to use timestamped runs
+    """
+    try:
+        run_directory = lp.dm.create_new_run(descriptive_directory_name=name)
+    except FileExistsError:
+        run_directory = os.path.realpath(f"{lp.dm.lephare_work_dir}/../{name}")
+        _update_lephare_env(lp.LEPHAREDIR, run_directory)
+    return run_directory
