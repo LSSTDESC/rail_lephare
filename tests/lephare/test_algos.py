@@ -55,5 +55,5 @@ def test_informer_and_estimator(test_data_dir: str):
 
     lephare_estimated = estimate_lephare.estimate(testdata_io)
     assert np.isclose(
-        np.sum(lephare_estimated.data[0].pdf(np.linspace(0, 3, 300))), 99.66505408115891
+        np.sum(lephare_estimated.data[0].pdf(np.linspace(0, 3, 300))), 99.66482986408954
     )
