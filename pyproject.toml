@@ -49,6 +49,9 @@ addopts = [
     "--cov=rail",
     "--cov-report=html"
 ]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.pylint]
 disable = [
