@@ -187,17 +187,19 @@ class LephareEstimator(CatEstimator):
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
         self.nzbins = int((self.zmax - self.zmin) / self.zstep)
+        CatEstimator.open_model(self, **self.config)
+
+        if self.config["run_dir"] == "None":
+            self.run_dir = self.model["run_dir"]
+        else:
+            self.run_dir = self.config["run_dir"]
+        _update_lephare_env(None, self.run_dir)
 
     def _process_chunk(self, start, end, data, first):
-        """Process an individual chunk of sources using lephare
+        """Process an individual chunk of sources using lephare. 
 
         Run the equivalent of zphota and get the PDF for every source.
         """
-        if self.config["run_dir"] == "None":
-            run_dir = self.model["run_dir"]
-        else:
-            run_dir = self.config["run_dir"]
-        _update_lephare_env(None, run_dir)
         # Create the lephare input table
         input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
         # Set the desired offsets estimate config overide lephare config overide inform offsets
