@@ -188,16 +188,6 @@ class LephareEstimator(CatEstimator):
         self.zmax = float(Z_STEP.split(",")[2])
         self.nzbins = int((self.zmax - self.zmin) / self.zstep)
 
-    def _estimate_pdf(self, onesource):
-        """Return the pdf of a single source.
-
-        Do we want to resample on RAIL z grid?
-        """
-        # Check this is the best way to access pdf
-        pdf = onesource.pdfmap[11]  # 11 = Bayesian galaxy redshift
-        # return the PDF as an array alongside lephare native zgrid
-        return np.array(pdf.vPDF), np.array(pdf.xaxis)
-
     def _process_chunk(self, start, end, data, first):
         """Process an individual chunk of sources using lephare
 
