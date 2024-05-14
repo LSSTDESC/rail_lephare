@@ -167,6 +167,15 @@ class LephareEstimator(CatEstimator):
                 "autoadapt will be run if that key is set in the config."
             ),
         ),
+        run_dir=Param(
+            str,
+            "None",
+            msg=(
+                "Override for the LEPHAREWORK directory. If None we load it "
+                "from the model which is set during the inform stage. This "
+                "is to facilitate manually moving intermediate files."
+            ),
+        ),
     )
 
     def __init__(self, args, comm=None):
@@ -194,7 +203,10 @@ class LephareEstimator(CatEstimator):
 
         Run the equivalent of zphota and get the PDF for every source.
         """
-        run_dir = self.model["run_dir"]
+        if self.config["run_dir"] == "None":
+            run_dir = self.model["run_dir"]
+        else:
+            run_dir = self.config["run_dir"]
         _update_lephare_env(None, run_dir)
         # Create the lephare input table
         input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
