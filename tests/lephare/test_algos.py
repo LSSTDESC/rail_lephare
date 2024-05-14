@@ -30,15 +30,19 @@ def test_informer_and_estimator(test_data_dir: str):
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
     traindata_io = tables_io.read(trainFile)
     testdata_io = tables_io.read(testFile)
+    # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
-    lp.data_retrieval.get_auxiliary_data(keymap=lephare_config)
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=lephare_config, additional_files=["examples/output.para"]
+    )
 
     inform_lephare = LephareInformer.make_stage(
         name="inform_Lephare",
         nondetect_val=np.nan,
         model="lephare.pkl",
         hdf5_groupname="",
+        lephare_config=lephare_config,
     )
 
     inform_lephare.inform(traindata_io)

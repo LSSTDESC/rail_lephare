@@ -167,6 +167,15 @@ class LephareEstimator(CatEstimator):
                 "autoadapt will be run if that key is set in the config."
             ),
         ),
+        run_dir=Param(
+            str,
+            "None",
+            msg=(
+                "Override for the LEPHAREWORK directory. If None we load it "
+                "from the model which is set during the inform stage. This "
+                "is to facilitate manually moving intermediate files."
+            ),
+        ),
     )
 
     def __init__(self, args, comm=None):
@@ -178,21 +187,16 @@ class LephareEstimator(CatEstimator):
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
         self.nzbins = int((self.zmax - self.zmin) / self.zstep)
-        self.run_dir = self.model["run_dir"]
+        CatEstimator.open_model(self, **self.config)
+
+        if self.config["run_dir"] == "None":
+            self.run_dir = self.model["run_dir"]
+        else:
+            self.run_dir = self.config["run_dir"]
         _update_lephare_env(None, self.run_dir)
 
-    def _estimate_pdf(self, onesource):
-        """Return the pdf of a single source.
-
-        Do we want to resample on RAIL z grid?
-        """
-        # Check this is the best way to access pdf
-        pdf = onesource.pdfmap[11]  # 11 = Bayesian galaxy redshift
-        # return the PDF as an array alongside lephare native zgrid
-        return np.array(pdf.vPDF), np.array(pdf.xaxis)
-
     def _process_chunk(self, start, end, data, first):
-        """Process an individual chunk of sources using lephare
+        """Process an individual chunk of sources using lephare. 
 
         Run the equivalent of zphota and get the PDF for every source.
         """
@@ -279,7 +283,7 @@ def _update_lephare_env(lepharedir, lepharework):
     importlib.reload(lp)
 
 
-def _set_run_dir(name=None):
+def _set_run_dir(name=None, full_path=None):
     """Create a named run if it doesn't exist otherwise set it to existing.
 
     lephare has the functionality to set a timed or named run. In general we
@@ -289,11 +293,15 @@ def _set_run_dir(name=None):
     Parameters
     ==========
     name : str
-        The name to set the run. We may want to use timestamped runs
+        The name to set the run. If not set we use a default timestamped run.
+    full_path : str
+        If set we create a run directory wherever the user sets it.
     """
-    try:
-        run_directory = lp.dm.create_new_run(descriptive_directory_name=name)
-    except FileExistsError:
+    if name is None:
+        run_directory = lp.dm.create_new_run()
+    elif full_path:
+        run_directory = full_path
+    else:
         run_directory = os.path.realpath(f"{lp.dm.lephare_work_dir}/../{name}")
-        _update_lephare_env(lp.LEPHAREDIR, run_directory)
+    _update_lephare_env(lp.LEPHAREDIR, run_directory)
     return run_directory
