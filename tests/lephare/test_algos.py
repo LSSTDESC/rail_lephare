@@ -33,7 +33,9 @@ def test_informer_and_estimator(test_data_dir: str):
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
-    lp.data_retrieval.get_auxiliary_data(keymap=lephare_config)
+    lp.data_retrieval.get_auxiliary_data(
+        keymap=lephare_config, additional_files=["examples/output.para"]
+    )
 
     inform_lephare = LephareInformer.make_stage(
         name="inform_Lephare",
