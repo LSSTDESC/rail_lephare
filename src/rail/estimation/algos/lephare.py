@@ -178,8 +178,10 @@ class LephareEstimator(CatEstimator):
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
         self.nzbins = int((self.zmax - self.zmin) / self.zstep)
-        self.run_dir = self.model["run_dir"]
-        _update_lephare_env(None, self.run_dir)
+
+    def open_model(self, **kwargs):
+        CatEstimator.open_model(self, **kwargs)
+        self.modeldict = self.model
 
     def _estimate_pdf(self, onesource):
         """Return the pdf of a single source.
@@ -196,6 +198,9 @@ class LephareEstimator(CatEstimator):
 
         Run the equivalent of zphota and get the PDF for every source.
         """
+        modeldict = self.modeldict
+        run_dir = modeldict["run_dir"]
+        _update_lephare_env(None, run_dir)
         # Create the lephare input table
         input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
         # Set the desired offsets estimate config overide lephare config overide inform offsets
@@ -279,7 +284,7 @@ def _update_lephare_env(lepharedir, lepharework):
     importlib.reload(lp)
 
 
-def _set_run_dir(name=None):
+def _set_run_dir(name=None, full_path=None):
     """Create a named run if it doesn't exist otherwise set it to existing.
 
     lephare has the functionality to set a timed or named run. In general we
@@ -289,11 +294,15 @@ def _set_run_dir(name=None):
     Parameters
     ==========
     name : str
-        The name to set the run. We may want to use timestamped runs
+        The name to set the run. If not set we use a default timestamped run.
+    full_path : str
+        If set we create a run directory wherever the user sets it.
     """
-    try:
-        run_directory = lp.dm.create_new_run(descriptive_directory_name=name)
-    except FileExistsError:
+    if name is None:
+        run_directory = lp.dm.create_new_run()
+    elif full_path:
+        run_directory = full_path
+    else:
         run_directory = os.path.realpath(f"{lp.dm.lephare_work_dir}/../{name}")
-        _update_lephare_env(lp.LEPHAREDIR, run_directory)
+    _update_lephare_env(lp.LEPHAREDIR, run_directory)
     return run_directory
