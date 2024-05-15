@@ -247,8 +247,12 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
 
     Parameters
     ==========
-    data : pandas
-        The RAIL input data chunk
+    data : OrderedDict
+        The RAIL input data chunk being and ordered dictionary of magnitude arrays.
+    mag_cols : list
+        The names of the magnitude or flux columns.
+    mag_err_cols : list
+        The names of the magnitude or flux error columns.
 
     Returns
     =======
