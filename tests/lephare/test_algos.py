@@ -42,7 +42,7 @@ def test_informer_and_estimator(test_data_dir: str):
         nondetect_val=np.nan,
         model="lephare.pkl",
         hdf5_groupname="",
-        lephare_config=lephare_config,
+        lephare_config=lp.keymap_to_string_dict(lephare_config),
     )
 
     inform_lephare.inform(traindata_io)
