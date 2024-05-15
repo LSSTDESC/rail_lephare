@@ -29,38 +29,38 @@ class LephareInformer(CatInformer):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
-            lp.read_config(
-                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
+            lp.keymap_to_string_dict(
+                lp.read_config(
+                    "{}/{}".format(
+                        os.path.dirname(os.path.abspath(__file__)), "lsst.para"
+                    )
+                )
             ),
             msg="The lephare config keymap.",
         ),
         star_config=Param(
             dict,
-            dict(LIB_ASCII=lp.keyword("LIB_ASCII", "YES")),
+            dict(LIB_ASCII="YES"),
             msg="Star config overrides.",
         ),
         gal_config=Param(
             dict,
             dict(
-                LIB_ASCII=lp.keyword("LIB_ASCII", "YES"),
-                MOD_EXTINC=lp.keyword("MOD_EXTINC", "18,26,26,33,26,33,26,33"),
-                EXTINC_LAW=lp.keyword(
-                    "EXTINC_LAW",
-                    "SMC_prevot.dat,SB_calzetti.dat,"
-                    "SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
-                ),
-                EM_LINES=lp.keyword("EM_LINES", "EMP_UV"),
-                EM_DISPERSION=lp.keyword("EM_DISPERSION", "0.5,0.75,1.,1.5,2."),
+                LIB_ASCII="YES",
+                MOD_EXTINC="18,26,26,33,26,33,26,33",
+                EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
+                EM_LINES="EMP_UV",
+                EM_DISPERSION="0.5,0.75,1.,1.5,2.",
             ),
             msg="Galaxy config overrides.",
         ),
         qso_config=Param(
             dict,
             dict(
-                LIB_ASCII=lp.keyword("LIB_ASCII", "YES"),
-                MOD_EXTINC=lp.keyword("MOD_EXTINC", "0,1000"),
-                EB_V=lp.keyword("EB_V", "0.,0.1,0.2,0.3"),
-                EXTINC_LAW=lp.keyword("EXTINC_LAW", "SB_calzetti.dat"),
+                LIB_ASCII="YES",
+                MOD_EXTINC="0,1000",
+                EB_V="0.,0.1,0.2,0.3",
+                EXTINC_LAW="SB_calzetti.dat",
             ),
             msg="QSO config overrides.",
         ),
@@ -104,10 +104,10 @@ class LephareInformer(CatInformer):
 
         # The three main lephare specific inform tasks
         lp.prepare(
-            self.lephare_config,
-            star_config=self.config["star_config"],
-            gal_config=self.config["gal_config"],
-            qso_config=self.config["qso_config"],
+            lp.string_dict_to_keymap(self.lephare_config),
+            star_config=lp.string_dict_to_keymap(self.config["star_config"]),
+            gal_config=lp.string_dict_to_keymap(self.config["gal_config"]),
+            qso_config=lp.string_dict_to_keymap(self.config["qso_config"]),
         )
 
         # Spectroscopic redshifts
@@ -117,7 +117,7 @@ class LephareInformer(CatInformer):
         input = _rail_to_lephare_input(
             training_data, self.config.bands, self.config.err_bands
         )
-        if self.config["lephare_config"]["AUTO_ADAPT"].value == "YES":
+        if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
             a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
             offsets = [a0, a1]
         else:
@@ -125,7 +125,7 @@ class LephareInformer(CatInformer):
         # We must make a string dictionary to allow pickling and saving
         config_text_dict = dict()
         for k in self.config["lephare_config"]:
-            config_text_dict[k] = self.config["lephare_config"][k].value
+            config_text_dict[k] = self.config["lephare_config"][k]
         # Give principle inform config 'model' to instance.
         self.model = dict(
             lephare_config=config_text_dict, offsets=offsets, run_dir=self.run_dir
@@ -210,12 +210,16 @@ class LephareEstimator(CatEstimator):
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["offsets"]:
             offsets = self.config["offsets"]
-        elif self.config["lephare_config"]["AUTO_ADAPT"].value == "YES":
-            a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
+        elif self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
+            a0, a1 = lp.calculate_offsets(
+                lp.string_dict_to_keymap(self.lephare_config), input
+            )
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
-        output, pdfs, zgrid = lp.process(self.lephare_config, input, offsets=offsets)
+        output, pdfs, zgrid = lp.process(
+            lp.string_dict_to_keymap(self.lephare_config), input, offsets=offsets
+        )
         self.zgrid = zgrid
 
         ng = data[self.config.bands[0]].shape[0]
