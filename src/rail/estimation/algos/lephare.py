@@ -194,7 +194,7 @@ class LephareEstimator(CatEstimator):
             self.lephare_config = self.model["lephare_config"]
         else:
             self.lephare_config = self.config["lephare_config"]
-        Z_STEP = self.lephare_config["Z_STEP"].value
+        Z_STEP = self.lephare_config["Z_STEP"]
         self.zstep = float(Z_STEP.split(",")[0])
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
@@ -210,7 +210,7 @@ class LephareEstimator(CatEstimator):
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["offsets"]:
             offsets = self.config["offsets"]
-        elif self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
+        elif self.lephare_config["AUTO_ADAPT"] == "YES":
             a0, a1 = lp.calculate_offsets(
                 lp.string_dict_to_keymap(self.lephare_config), input
             )
