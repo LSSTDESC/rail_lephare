@@ -149,10 +149,8 @@ class LephareEstimator(CatEstimator):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
-            lp.read_config(
-                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
-            ),
-            msg="The lephare config keymap.",
+            {},
+            msg="The lephare config keymap. If unset we load it from the model.",
         ),
         output_keys=Param(
             list,
@@ -180,23 +178,25 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
-        self.lephare_config = self.config["lephare_config"]
-        self.photz = lp.PhotoZ(self.lephare_config)
-        Z_STEP = self.lephare_config["Z_STEP"].value
-        self.zstep = float(Z_STEP.split(",")[0])
-        self.zmin = float(Z_STEP.split(",")[1])
-        self.zmax = float(Z_STEP.split(",")[2])
-        self.nzbins = int((self.zmax - self.zmin) / self.zstep)
         CatEstimator.open_model(self, **self.config)
-
         if self.config["run_dir"] == "None":
             self.run_dir = self.model["run_dir"]
         else:
             self.run_dir = self.config["run_dir"]
         _update_lephare_env(None, self.run_dir)
+        # Use lephare config from model unless overwritten by estimate param.
+        if len(self.config["lephare_config"]) == 0:
+            self.lephare_config = self.model["lephare_config"]
+        else:
+            self.lephare_config = self.config["lephare_config"]
+        Z_STEP = self.lephare_config["Z_STEP"].value
+        self.zstep = float(Z_STEP.split(",")[0])
+        self.zmin = float(Z_STEP.split(",")[1])
+        self.zmax = float(Z_STEP.split(",")[2])
+        self.nzbins = int((self.zmax - self.zmin) / self.zstep)
 
     def _process_chunk(self, start, end, data, first):
-        """Process an individual chunk of sources using lephare. 
+        """Process an individual chunk of sources using lephare.
 
         Run the equivalent of zphota and get the PDF for every source.
         """
@@ -256,11 +256,22 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
     except KeyError:
         input["id"] = np.arange(ng)
     # Add all available magnitudes
+
+    context = np.full(ng, 0)
     for n in np.arange(len(mag_cols)):
         input[mag_cols[n]] = data[mag_cols[n]].T
         input[mag_err_cols[n]] = data[mag_err_cols[n]].T
-    # Set context to use all bands
-    input["context"] = np.sum([2**n for n in np.arange(ng)])
+        # Shall we allow negative fluxes?
+        mask = input[mag_cols[n]] > 0
+        mask |= ~np.isnan(input[mag_cols[n]])
+        mask |= input[mag_err_cols[n]] > 0
+        mask |= ~np.isnan(input[mag_err_cols[n]])
+        context += mask * 2**n
+    # Set context to data value or excluding all negative and nan values
+    try:
+        input["id"] = data["context"]
+    except KeyError:
+        input["context"] = context
     input["zspec"] = data["redshift"]
     input["string_data"] = " "
     return input
