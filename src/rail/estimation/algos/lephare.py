@@ -154,8 +154,13 @@ class LephareEstimator(CatEstimator):
         ),
         output_keys=Param(
             list,
-            ["Z_BEST", "ZQ_BEST", "MOD_STAR"],
-            msg="The output keys to add to ancil. These must be in the output para file.",
+            ["Z_BEST", "CHI_BEST", "ZQ_BEST", "CHI_QSO", "MOD_STAR", "CHI_STAR"],
+            msg=(
+                "The output keys to add to ancil. These must be in the "
+                "output para file. By default we include the best galaxy "
+                "and QSO redshift and best star alongside their respective "
+                "chi squared."
+            ),
         ),
         offsets=Param(
             list,
@@ -263,13 +268,13 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
         input[mag_err_cols[n]] = data[mag_err_cols[n]].T
         # Shall we allow negative fluxes?
         mask = input[mag_cols[n]] > 0
-        mask |= ~np.isnan(input[mag_cols[n]])
-        mask |= input[mag_err_cols[n]] > 0
-        mask |= ~np.isnan(input[mag_err_cols[n]])
+        mask &= ~np.isnan(input[mag_cols[n]])
+        mask &= input[mag_err_cols[n]] > 0
+        mask &= ~np.isnan(input[mag_err_cols[n]])
         context += mask * 2**n
     # Set context to data value or excluding all negative and nan values
     try:
-        input["id"] = data["context"]
+        input["context"] = data["context"]
     except KeyError:
         input["context"] = context
     input["zspec"] = data["redshift"]
