@@ -66,6 +66,10 @@ class LephareInformer(CatInformer):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
+        # We need to ensure the requested redshift grid is propagated
+        Z_STEP=f"{},{self.zmin},{self.zmax}"
+        print(f"rail_lephare is setting the z grid to {Z_STEP} based on the informer params.")
+        self.config["lephare_config"]['Z_STEP']=Z_STEP
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
 
@@ -177,13 +181,13 @@ class LephareEstimator(CatEstimator):
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
-        Z_STEP = self.lephare_config["Z_STEP"]
+        CatEstimator.open_model(self, **self.config)
+        Z_STEP=self.model["lephare_config"]["Z_STEP"]
+        self.lephare_config["Z_STEP"]=Z_STEP
         self.zstep = float(Z_STEP.split(",")[0])
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
         self.nzbins = int((self.zmax - self.zmin) / self.zstep)
-        CatEstimator.open_model(self, **self.config)
-
         if self.config["run_dir"] == "None":
             self.run_dir = self.model["run_dir"]
         else:
