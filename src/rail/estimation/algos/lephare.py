@@ -188,10 +188,10 @@ class LephareEstimator(CatEstimator):
         CatEstimator.open_model(self, **self.config)
         Z_STEP=self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"]=Z_STEP
-        self.zstep = float(Z_STEP.split(",")[0])
+        self.dz = float(Z_STEP.split(",")[0])
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
-        self.nzbins = int((self.zmax - self.zmin) / self.zstep)
+        self.nzbins = int((self.zmax - self.zmin) / self.dz)
         if self.config["run_dir"] == "None":
             self.run_dir = self.model["run_dir"]
         else:
