@@ -1,7 +1,7 @@
 # pz-rail-lephare
 
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
-[![codecov](https://codecov.io/gh/LSSTDESC/pz-rail-lephare/branch/main/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/pz-rail-lephare)
+[![codecov](https://codecov.io/gh/LSSTDESC/rail_lephare/graph/badge.svg?token=I597zffkaM)](https://codecov.io/gh/LSSTDESC/rail_lephare)
 [![PyPI](https://img.shields.io/pypi/v/pz-rail-lephare?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/pz-rail-lephare/)
 
 ## RAIL LePHARE
