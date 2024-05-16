@@ -43,6 +43,10 @@ def test_informer_and_estimator(test_data_dir: str):
         model="lephare.pkl",
         hdf5_groupname="",
         lephare_config=lp.keymap_to_string_dict(lephare_config),
+        # Use a very sparse redshift grid to speed up test:
+        zmin=0,
+        zmax=5,
+        nzbins=6,
     )
 
     inform_lephare.inform(traindata_io)

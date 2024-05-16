@@ -67,9 +67,12 @@ class LephareInformer(CatInformer):
         CatInformer.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
         # We need to ensure the requested redshift grid is propagated
+        self.zmin=self.config["zmin"]
+        self.zmax=self.config["zmax"]
+        self.nzbins=self.config["nzbins"]
         self.dz=(self.zmax-self.zmin)/(self.nzbins-1)
         Z_STEP=f"{self.dz},{self.zmin},{self.zmax}"
-        print(f"rail_lephare is setting the z grid to {Z_STEP} based on the informer params.")
+        print(f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params.")
         self.config["lephare_config"]['Z_STEP']=Z_STEP
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
