@@ -22,6 +22,8 @@ def test_informer_basic():
 
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
+    # Check config zgrid updated to stage param defaults:
+    assert inform_lephare.config["lephare_config"]["Z_STEP"]=='0.01,0.0,3.0'
 
 
 @pytest.mark.slow
