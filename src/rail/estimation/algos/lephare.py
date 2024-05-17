@@ -50,13 +50,7 @@ class LephareInformer(CatInformer):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
-<<<<<<< Updated upstream
-            lp.keymap_to_string_dict(lp.read_config(
-                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
-            )),
-=======
             lsst_default_config,
->>>>>>> Stashed changes
             msg="The lephare config keymap.",
         ),
         star_config=Param(
@@ -238,13 +232,9 @@ class LephareEstimator(CatEstimator):
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
-<<<<<<< Updated upstream
-        output, pdfs, zgrid = lp.process(lp.string_dict_to_keymap(self.lephare_config), input, offsets=offsets)
-=======
         output, pdfs, zgrid = lp.process(
             self.lephare_config, input, offsets=offsets
         )
->>>>>>> Stashed changes
         self.zgrid = zgrid
 
         ng = data[self.config.bands[0]].shape[0]
