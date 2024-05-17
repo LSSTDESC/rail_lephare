@@ -243,7 +243,7 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
 
 
     """
-    ng = data["redshift"].shape[0]
+    ng = data[mag_cols[0]].shape[0]
     # Make input catalogue in standard lephare format
     input = Table()
     try:
@@ -256,7 +256,10 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
         input[mag_err_cols[n]] = data[mag_err_cols[n]].T
     # Set context to use all bands
     input["context"] = np.sum([2**n for n in np.arange(ng)])
-    input["zspec"] = data["redshift"]
+    try:
+        input["zspec"] = data["redshift"]
+    except KeyError:
+        input["zspec"] = np.full(ng,-99.)
     input["string_data"] = " "
     return input
 
