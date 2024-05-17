@@ -9,7 +9,7 @@ import qp
 import importlib
 
 # We start with the COSMOS default and override with LSST specific values.
-lsst_default_config=lp.default_cosmos_config
+lsst_default_config=lp.default_cosmos_config.copy()
 lsst_default_config.update({'CAT_IN': 'bidon',
  'ERR_SCALE': '0.02,0.02,0.02,0.02,0.02,0.02',
  'FILTER_CALIB': '0,0,0,0,0,0',
@@ -172,15 +172,18 @@ class LephareEstimator(CatEstimator):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
-            lp.keymap_to_string_dict(lp.read_config(
-                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
-            )),
-            msg="The lephare config keymap.",
+            {},
+            msg="The lephare config keymap. If unset we load it from the model.",
         ),
         output_keys=Param(
             list,
-            ["Z_BEST", "ZQ_BEST", "MOD_STAR"],
-            msg="The output keys to add to ancil. These must be in the output para file.",
+            ["Z_BEST", "CHI_BEST", "ZQ_BEST", "CHI_QSO", "MOD_STAR", "CHI_STAR"],
+            msg=(
+                "The output keys to add to ancil. These must be in the "
+                "output para file. By default we include the best galaxy "
+                "and QSO redshift and best star alongside their respective "
+                "chi squared."
+            ),
         ),
         offsets=Param(
             list,
@@ -203,8 +206,8 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
-        self.lephare_config = self.config["lephare_config"]
         CatEstimator.open_model(self, **self.config)
+        self.lephare_config = self.model["lephare_config"]
         Z_STEP=self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"]=Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
@@ -218,7 +221,7 @@ class LephareEstimator(CatEstimator):
         _update_lephare_env(None, self.run_dir)
 
     def _process_chunk(self, start, end, data, first):
-        """Process an individual chunk of sources using lephare. 
+        """Process an individual chunk of sources using lephare.
 
         Run the equivalent of zphota and get the PDF for every source.
         """
@@ -227,8 +230,10 @@ class LephareEstimator(CatEstimator):
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["offsets"]:
             offsets = self.config["offsets"]
-        elif self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            a0, a1 = lp.calculate_offsets(lp.string_dict_to_keymap(self.lephare_config), input)
+        elif self.lephare_config["AUTO_ADAPT"] == "YES":
+            a0, a1 = lp.calculate_offsets(
+                lp.string_dict_to_keymap(self.lephare_config), input
+            )
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
@@ -262,8 +267,12 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
 
     Parameters
     ==========
-    data : pandas
-        The RAIL input data chunk
+    data : OrderedDict
+        The RAIL input data chunk being and ordered dictionary of magnitude arrays.
+    mag_cols : list
+        The names of the magnitude or flux columns.
+    mag_err_cols : list
+        The names of the magnitude or flux error columns.
 
     Returns
     =======
@@ -280,11 +289,22 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
     except KeyError:
         input["id"] = np.arange(ng)
     # Add all available magnitudes
+
+    context = np.full(ng, 0)
     for n in np.arange(len(mag_cols)):
         input[mag_cols[n]] = data[mag_cols[n]].T
         input[mag_err_cols[n]] = data[mag_err_cols[n]].T
-    # Set context to use all bands
-    input["context"] = np.sum([2**n for n in np.arange(ng)])
+        # Shall we allow negative fluxes?
+        mask = input[mag_cols[n]] > 0
+        mask &= ~np.isnan(input[mag_cols[n]])
+        mask &= input[mag_err_cols[n]] > 0
+        mask &= ~np.isnan(input[mag_err_cols[n]])
+        context += mask * 2**n
+    # Set context to data value if set or else exclude all negative and nan values
+    try:
+        input["context"] = data["context"]
+    except KeyError:
+        input["context"] = context
     try:
         input["zspec"] = data["redshift"]
     except KeyError:
