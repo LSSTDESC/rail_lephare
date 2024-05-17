@@ -8,6 +8,27 @@ from astropy.table import Table
 import qp
 import importlib
 
+# We start with the COSMOS default and override with LSST specific values.
+lsst_default_config=lp.default_cosmos_config
+lsst_default_config.update({'CAT_IN': 'bidon',
+ 'ERR_SCALE': '0.02,0.02,0.02,0.02,0.02,0.02',
+ 'FILTER_CALIB': '0,0,0,0,0,0',
+ 'FILTER_FILE': 'filter_lsst',
+ 'FILTER_LIST': 'lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb',
+ 'GAL_LIB': 'LSST_GAL_BIN',
+ 'GAL_LIB_IN': 'LSST_GAL_BIN',
+ 'GAL_LIB_OUT': 'LSST_GAL_MAG',
+ 'GLB_CONTEXT': '63',
+ 'INP_TYPE': 'M',
+ 'MABS_CONTEXT': '63',
+ 'MABS_REF': '1',
+ 'QSO_LIB': 'LSST_QSO_BIN',
+ 'QSO_LIB_IN': 'LSST_QSO_BIN',
+ 'QSO_LIB_OUT': 'LSST_QSO_MAG',
+ 'STAR_LIB': 'LSST_STAR_BIN',
+ 'STAR_LIB_IN': 'LSST_STAR_BIN',
+ 'STAR_LIB_OUT': 'LSST_STAR_MAG',
+ 'ZPHOTLIB': 'LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG'})
 
 class LephareInformer(CatInformer):
     """Inform stage for LephareEstimator
@@ -29,9 +50,7 @@ class LephareInformer(CatInformer):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
-            lp.keymap_to_string_dict(lp.read_config(
-                "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
-            )),
+            lsst_default_config,
             msg="The lephare config keymap.",
         ),
         star_config=Param(
@@ -66,6 +85,14 @@ class LephareInformer(CatInformer):
         """Init function, init config stuff (COPIED from rail_bpz)"""
         CatInformer.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
+        # We need to ensure the requested redshift grid is propagated
+        self.zmin=self.config["zmin"]
+        self.zmax=self.config["zmax"]
+        self.nzbins=self.config["nzbins"]
+        self.dz=(self.zmax-self.zmin)/(self.nzbins-1)
+        Z_STEP=f"{self.dz},{self.zmin},{self.zmax}"
+        print(f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params.")
+        self.config["lephare_config"]['Z_STEP']=Z_STEP
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
 
@@ -100,10 +127,10 @@ class LephareInformer(CatInformer):
 
         # The three main lephare specific inform tasks
         lp.prepare(
-            lp.string_dict_to_keymap(self.lephare_config),
-            star_config=lp.string_dict_to_keymap(self.config["star_config"]),
-            gal_config=lp.string_dict_to_keymap(self.config["gal_config"]),
-            qso_config=lp.string_dict_to_keymap(self.config["qso_config"]),
+            self.lephare_config,
+            star_config=self.config["star_config"],
+            gal_config=self.config["gal_config"],
+            qso_config=self.config["qso_config"],
         )
 
         # Spectroscopic redshifts
@@ -177,13 +204,13 @@ class LephareEstimator(CatEstimator):
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
         self.lephare_config = self.config["lephare_config"]
-        Z_STEP = self.lephare_config["Z_STEP"]
-        self.zstep = float(Z_STEP.split(",")[0])
+        CatEstimator.open_model(self, **self.config)
+        Z_STEP=self.model["lephare_config"]["Z_STEP"]
+        self.lephare_config["Z_STEP"]=Z_STEP
+        self.dz = float(Z_STEP.split(",")[0])
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
-        self.nzbins = int((self.zmax - self.zmin) / self.zstep)
-        CatEstimator.open_model(self, **self.config)
-
+        self.nzbins = int((self.zmax - self.zmin) / self.dz)
         if self.config["run_dir"] == "None":
             self.run_dir = self.model["run_dir"]
         else:
@@ -205,7 +232,9 @@ class LephareEstimator(CatEstimator):
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
-        output, pdfs, zgrid = lp.process(lp.string_dict_to_keymap(self.lephare_config), input, offsets=offsets)
+        output, pdfs, zgrid = lp.process(
+            self.lephare_config, input, offsets=offsets
+        )
         self.zgrid = zgrid
 
         ng = data[self.config.bands[0]].shape[0]
