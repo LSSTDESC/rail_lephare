@@ -8,6 +8,27 @@ from astropy.table import Table
 import qp
 import importlib
 
+# We start with the COSMOS default and override with LSST specific values.
+lsst_default_config=lp.default_cosmos_config
+lsst_default_config.update({'CAT_IN': 'bidon',
+ 'ERR_SCALE': '0.02,0.02,0.02,0.02,0.02,0.02',
+ 'FILTER_CALIB': '0,0,0,0,0,0',
+ 'FILTER_FILE': 'filter_lsst',
+ 'FILTER_LIST': 'lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb',
+ 'GAL_LIB': 'LSST_GAL_BIN',
+ 'GAL_LIB_IN': 'LSST_GAL_BIN',
+ 'GAL_LIB_OUT': 'LSST_GAL_MAG',
+ 'GLB_CONTEXT': '63',
+ 'INP_TYPE': 'M',
+ 'MABS_CONTEXT': '63',
+ 'MABS_REF': '1',
+ 'QSO_LIB': 'LSST_QSO_BIN',
+ 'QSO_LIB_IN': 'LSST_QSO_BIN',
+ 'QSO_LIB_OUT': 'LSST_QSO_MAG',
+ 'STAR_LIB': 'LSST_STAR_BIN',
+ 'STAR_LIB_IN': 'LSST_STAR_BIN',
+ 'STAR_LIB_OUT': 'LSST_STAR_MAG',
+ 'ZPHOTLIB': 'LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG'})
 
 class LephareInformer(CatInformer):
     """Inform stage for LephareEstimator
@@ -29,9 +50,13 @@ class LephareInformer(CatInformer):
         redshift_col=SHARED_PARAMS,
         lephare_config=Param(
             dict,
+<<<<<<< Updated upstream
             lp.keymap_to_string_dict(lp.read_config(
                 "{}/{}".format(os.path.dirname(os.path.abspath(__file__)), "lsst.para")
             )),
+=======
+            lsst_default_config,
+>>>>>>> Stashed changes
             msg="The lephare config keymap.",
         ),
         star_config=Param(
@@ -108,10 +133,10 @@ class LephareInformer(CatInformer):
 
         # The three main lephare specific inform tasks
         lp.prepare(
-            lp.string_dict_to_keymap(self.lephare_config),
-            star_config=lp.string_dict_to_keymap(self.config["star_config"]),
-            gal_config=lp.string_dict_to_keymap(self.config["gal_config"]),
-            qso_config=lp.string_dict_to_keymap(self.config["qso_config"]),
+            self.lephare_config,
+            star_config=self.config["star_config"],
+            gal_config=self.config["gal_config"],
+            qso_config=self.config["qso_config"],
         )
 
         # Spectroscopic redshifts
@@ -213,7 +238,13 @@ class LephareEstimator(CatEstimator):
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
+<<<<<<< Updated upstream
         output, pdfs, zgrid = lp.process(lp.string_dict_to_keymap(self.lephare_config), input, offsets=offsets)
+=======
+        output, pdfs, zgrid = lp.process(
+            self.lephare_config, input, offsets=offsets
+        )
+>>>>>>> Stashed changes
         self.zgrid = zgrid
 
         ng = data[self.config.bands[0]].shape[0]
