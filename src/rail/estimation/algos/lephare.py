@@ -9,7 +9,7 @@ import qp
 import importlib
 
 # We start with the COSMOS default and override with LSST specific values.
-lsst_default_config=lp.default_cosmos_config
+lsst_default_config=lp.default_cosmos_config.copy()
 lsst_default_config.update({'CAT_IN': 'bidon',
  'ERR_SCALE': '0.02,0.02,0.02,0.02,0.02,0.02',
  'FILTER_CALIB': '0,0,0,0,0,0',
@@ -206,8 +206,8 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, comm=None):
         CatEstimator.__init__(self, args, comm=comm)
-        self.lephare_config = self.config["lephare_config"]
         CatEstimator.open_model(self, **self.config)
+        self.lephare_config = self.model["lephare_config"]
         Z_STEP=self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"]=Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
