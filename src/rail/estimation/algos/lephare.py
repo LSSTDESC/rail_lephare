@@ -261,7 +261,7 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
 
 
     """
-    ng = data["redshift"].shape[0]
+    ng = data[mag_cols[0]].shape[0]
     # Make input catalogue in standard lephare format
     input = Table()
     try:
@@ -280,12 +280,15 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
         mask &= input[mag_err_cols[n]] > 0
         mask &= ~np.isnan(input[mag_err_cols[n]])
         context += mask * 2**n
-    # Set context to data value or excluding all negative and nan values
+    # Set context to data value if set or else exclude all negative and nan values
     try:
         input["context"] = data["context"]
     except KeyError:
         input["context"] = context
-    input["zspec"] = data["redshift"]
+    try:
+        input["zspec"] = data["redshift"]
+    except KeyError:
+        input["zspec"] = np.full(ng,-99.)
     input["string_data"] = " "
     return input
 
