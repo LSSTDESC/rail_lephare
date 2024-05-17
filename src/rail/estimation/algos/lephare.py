@@ -300,7 +300,7 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
         mask &= input[mag_err_cols[n]] > 0
         mask &= ~np.isnan(input[mag_err_cols[n]])
         context += mask * 2**n
-    # Set context to data value or excluding all negative and nan values
+    # Set context to data value if set or else exclude all negative and nan values
     try:
         input["context"] = data["context"]
     except KeyError:
