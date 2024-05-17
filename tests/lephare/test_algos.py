@@ -22,6 +22,8 @@ def test_informer_basic():
 
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
+    # Check config zgrid updated to stage param defaults:
+    assert inform_lephare.config["lephare_config"]["Z_STEP"]=='0.01,0.0,3.0'
 
 
 @pytest.mark.slow
@@ -43,6 +45,10 @@ def test_informer_and_estimator(test_data_dir: str):
         model="lephare.pkl",
         hdf5_groupname="",
         lephare_config=lp.keymap_to_string_dict(lephare_config),
+        # Use a very sparse redshift grid to speed up test:
+        zmin=0,
+        zmax=5,
+        nzbins=6,
     )
 
     inform_lephare.inform(traindata_io)
