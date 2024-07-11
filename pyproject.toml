@@ -18,7 +18,7 @@ dynamic = ["version"]
 
 dependencies = [
     "lephare",
-    "ceci2 @ git+https://github.com/LSSTDESC/rail_base",
+    "pz_rail_base @ git+https://github.com/LSSTDESC/rail_base@ceci2",
     "qp-prob[full]",
 ]
 
