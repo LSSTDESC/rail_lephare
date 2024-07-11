@@ -83,7 +83,7 @@ class LephareInformer(CatInformer):
 
     def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
-        super().__init__(self, args, **kwargs)
+        super().__init__(args, **kwargs)
         self.lephare_config = self.config["lephare_config"]
         # We need to ensure the requested redshift grid is propagated
         self.zmin=self.config["zmin"]
@@ -205,7 +205,7 @@ class LephareEstimator(CatEstimator):
     )
 
     def __init__(self, args, **kwargs):
-        super().__init__(self, args, **kwargs)
+        super().__init__(args, **kwargs)
         CatEstimator.open_model(self, **self.config)
         self.lephare_config = self.model["lephare_config"]
         Z_STEP=self.model["lephare_config"]["Z_STEP"]
