@@ -214,7 +214,10 @@ class LephareEstimator(CatEstimator):
     def __init__(self, args, **kwargs):
         super().__init__(args, **kwargs)
         CatEstimator.open_model(self, **self.config)
-        self.lephare_config = self.model["lephare_config"]
+        if self.config["lephare_config"]:
+            self.lephare_config = self.config["lephare_config"]
+        else:
+            self.lephare_config = self.model["lephare_config"]
         Z_STEP = self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])

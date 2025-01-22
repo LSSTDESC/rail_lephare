@@ -23,7 +23,7 @@ def test_informer_basic():
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
     # Check config zgrid updated to stage param defaults:
-    assert inform_lephare.config["lephare_config"]["Z_STEP"]=='0.01,0.0,3.0'
+    assert inform_lephare.config["lephare_config"]["Z_STEP"] == "0.01,0.0,3.0"
 
 
 @pytest.mark.slow
@@ -36,7 +36,8 @@ def test_informer_and_estimator(test_data_dir: str):
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
     lp.data_retrieval.get_auxiliary_data(
-        keymap=lephare_config, additional_files=["examples/output.para"]
+        keymap=lephare_config,
+        additional_files=["examples/output.para", "examples/COSMOS_MOD.list"],
     )
 
     inform_lephare = LephareInformer.make_stage(
