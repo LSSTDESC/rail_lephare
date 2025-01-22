@@ -37,7 +37,7 @@ def test_informer_and_estimator(test_data_dir: str):
     lephare_config = lp.read_config(lephare_config_file)
     lp.data_retrieval.get_auxiliary_data(
         keymap=lephare_config,
-        additional_files=["examples/output.para", "examples/COSMOS_MOD.list"],
+        additional_files=["examples/output.para"],
     )
 
     inform_lephare = LephareInformer.make_stage(
