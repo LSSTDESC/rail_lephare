@@ -9,26 +9,31 @@ import qp
 import importlib
 
 # We start with the COSMOS default and override with LSST specific values.
-lsst_default_config=lp.default_cosmos_config.copy()
-lsst_default_config.update({'CAT_IN': 'bidon',
- 'ERR_SCALE': '0.02,0.02,0.02,0.02,0.02,0.02',
- 'FILTER_CALIB': '0,0,0,0,0,0',
- 'FILTER_FILE': 'filter_lsst',
- 'FILTER_LIST': 'lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb',
- 'GAL_LIB': 'LSST_GAL_BIN',
- 'GAL_LIB_IN': 'LSST_GAL_BIN',
- 'GAL_LIB_OUT': 'LSST_GAL_MAG',
- 'GLB_CONTEXT': '63',
- 'INP_TYPE': 'M',
- 'MABS_CONTEXT': '63',
- 'MABS_REF': '1',
- 'QSO_LIB': 'LSST_QSO_BIN',
- 'QSO_LIB_IN': 'LSST_QSO_BIN',
- 'QSO_LIB_OUT': 'LSST_QSO_MAG',
- 'STAR_LIB': 'LSST_STAR_BIN',
- 'STAR_LIB_IN': 'LSST_STAR_BIN',
- 'STAR_LIB_OUT': 'LSST_STAR_MAG',
- 'ZPHOTLIB': 'LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG'})
+lsst_default_config = lp.default_cosmos_config.copy()
+lsst_default_config.update(
+    {
+        "CAT_IN": "bidon",
+        "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02",
+        "FILTER_CALIB": "0,0,0,0,0,0",
+        "FILTER_FILE": "filter_lsst",
+        "FILTER_LIST": "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb",
+        "GAL_LIB": "LSST_GAL_BIN",
+        "GAL_LIB_IN": "LSST_GAL_BIN",
+        "GAL_LIB_OUT": "LSST_GAL_MAG",
+        "GLB_CONTEXT": "63",
+        "INP_TYPE": "M",
+        "MABS_CONTEXT": "63",
+        "MABS_REF": "1",
+        "QSO_LIB": "LSST_QSO_BIN",
+        "QSO_LIB_IN": "LSST_QSO_BIN",
+        "QSO_LIB_OUT": "LSST_QSO_MAG",
+        "STAR_LIB": "LSST_STAR_BIN",
+        "STAR_LIB_IN": "LSST_STAR_BIN",
+        "STAR_LIB_OUT": "LSST_STAR_MAG",
+        "ZPHOTLIB": "LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG",
+    }
+)
+
 
 class LephareInformer(CatInformer):
     """Inform stage for LephareEstimator
@@ -81,18 +86,20 @@ class LephareInformer(CatInformer):
         ),
     )
 
-    def __init__(self, args, comm=None):
+    def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
-        CatInformer.__init__(self, args, comm=comm)
+        super().__init__(args, **kwargs)
         self.lephare_config = self.config["lephare_config"]
         # We need to ensure the requested redshift grid is propagated
-        self.zmin=self.config["zmin"]
-        self.zmax=self.config["zmax"]
-        self.nzbins=self.config["nzbins"]
-        self.dz=(self.zmax-self.zmin)/(self.nzbins-1)
-        Z_STEP=f"{self.dz},{self.zmin},{self.zmax}"
-        print(f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params.")
-        self.config["lephare_config"]['Z_STEP']=Z_STEP
+        self.zmin = self.config["zmin"]
+        self.zmax = self.config["zmax"]
+        self.nzbins = self.config["nzbins"]
+        self.dz = (self.zmax - self.zmin) / (self.nzbins - 1)
+        Z_STEP = f"{self.dz},{self.zmin},{self.zmax}"
+        print(
+            f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params."
+        )
+        self.config["lephare_config"]["Z_STEP"] = Z_STEP
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
 
@@ -204,12 +211,15 @@ class LephareEstimator(CatEstimator):
         ),
     )
 
-    def __init__(self, args, comm=None):
-        CatEstimator.__init__(self, args, comm=comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         CatEstimator.open_model(self, **self.config)
-        self.lephare_config = self.model["lephare_config"]
-        Z_STEP=self.model["lephare_config"]["Z_STEP"]
-        self.lephare_config["Z_STEP"]=Z_STEP
+        if self.config["lephare_config"]:
+            self.lephare_config = self.config["lephare_config"]
+        else:
+            self.lephare_config = self.model["lephare_config"]
+        Z_STEP = self.model["lephare_config"]["Z_STEP"]
+        self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
         self.zmin = float(Z_STEP.split(",")[1])
         self.zmax = float(Z_STEP.split(",")[2])
@@ -237,12 +247,16 @@ class LephareEstimator(CatEstimator):
             offsets = [a0, a1]
         elif not self.config["offsets"]:
             offsets = self.model["offsets"]
-        output, pdfs, zgrid = lp.process(
-            self.lephare_config, input, offsets=offsets
-        )
-        self.zgrid = zgrid
-
+        output, photozlist = lp.process(self.lephare_config, input, offsets=offsets)
         ng = data[self.config.bands[0]].shape[0]
+        # Unpack the pdfs for galaxies
+        pdfs = []
+        for i in range(ng):
+            pdf = np.array(photozlist[i].pdfmap[11].vPDF)
+            pdfs.append(pdf)
+        zgrid = np.array(photozlist[i].pdfmap[11].xaxis)
+        pdfs = np.array(pdfs)
+        self.zgrid = zgrid
         zmode = np.zeros(ng)
         zmean = np.zeros(ng)
 
@@ -308,7 +322,7 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
     try:
         input["zspec"] = data["redshift"]
     except KeyError:
-        input["zspec"] = np.full(ng,-99.)
+        input["zspec"] = np.full(ng, -99.0)
     input["string_data"] = " "
     return input
 

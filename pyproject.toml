@@ -18,7 +18,7 @@ dynamic = ["version"]
 
 dependencies = [
     "lephare",
-    "pz-rail-base",
+    "pz-rail-base>=1.0.3",
     "qp-prob[full]",
 ]
 
