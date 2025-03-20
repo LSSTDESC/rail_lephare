@@ -148,8 +148,7 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
-            offsets = [a0, a1]
+            offsets = lp.calculate_offsets(self.config["lephare_config"], input)
         else:
             offsets = None
         # We must make a string dictionary to allow pickling and saving
@@ -237,7 +236,7 @@ class LephareEstimator(CatEstimator):
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
-            self.lephare_config["APPLY_SYSSHIFT"] = ",".join(offsets[0])
+            self.lephare_config["APPLY_SYSSHIFT"] = ",".join(offsets)
         output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
