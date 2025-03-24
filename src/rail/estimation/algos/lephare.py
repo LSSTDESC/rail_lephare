@@ -148,8 +148,7 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            a0, a1 = lp.calculate_offsets(self.config["lephare_config"], input)
-            offsets = [a0, a1]
+            offsets = lp.calculate_offsets(self.config["lephare_config"], input)
         else:
             offsets = None
         # We must make a string dictionary to allow pickling and saving
@@ -182,6 +181,11 @@ class LephareEstimator(CatEstimator):
             {},
             msg="The lephare config keymap. If unset we load it from the model.",
         ),
+        use_inform_offsets=Param(
+            bool,
+            True,
+            msg="Use the zero point offsets computed in the inform stage.",
+        ),
         output_keys=Param(
             list,
             ["Z_BEST", "CHI_BEST", "ZQ_BEST", "CHI_QSO", "MOD_STAR", "CHI_STAR"],
@@ -190,14 +194,6 @@ class LephareEstimator(CatEstimator):
                 "output para file. By default we include the best galaxy "
                 "and QSO redshift and best star alongside their respective "
                 "chi squared."
-            ),
-        ),
-        offsets=Param(
-            list,
-            [],
-            msg=(
-                "The offsets to apply to photometry. If empty "
-                "autoadapt will be run if that key is set in the config."
             ),
         ),
         run_dir=Param(
@@ -238,16 +234,10 @@ class LephareEstimator(CatEstimator):
         # Create the lephare input table
         input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
         # Set the desired offsets estimate config overide lephare config overide inform offsets
-        if self.config["offsets"]:
-            offsets = self.config["offsets"]
-        elif self.lephare_config["AUTO_ADAPT"] == "YES":
-            a0, a1 = lp.calculate_offsets(
-                lp.string_dict_to_keymap(self.lephare_config), input
-            )
-            offsets = [a0, a1]
-        elif not self.config["offsets"]:
+        if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
-        output, photozlist = lp.process(self.lephare_config, input, offsets=offsets)
+            self.lephare_config["APPLY_SYSSHIFT"] = ",".join(offsets)
+        output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
