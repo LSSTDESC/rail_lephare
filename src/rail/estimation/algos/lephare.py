@@ -236,7 +236,7 @@ class LephareEstimator(CatEstimator):
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
-            self.lephare_config["APPLY_SYSSHIFT"] = ",".join(offsets)
+            self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
         output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
