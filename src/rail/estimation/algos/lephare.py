@@ -209,7 +209,13 @@ class LephareEstimator(CatEstimator):
 
     def __init__(self, args, **kwargs):
         super().__init__(args, **kwargs)
-        CatEstimator.open_model(self, **self.config)
+        self.lephare_config: dict = {}
+        self.zmin: float| None = None
+        self.zmax: float| None = None
+        self.nzbins: int| None = None
+
+    def open_model(self, **kwargs):
+        CatEstimator.open_model(self, **kwargs)
         if self.config["lephare_config"]:
             self.lephare_config = self.config["lephare_config"]
         else:
