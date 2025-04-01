@@ -267,10 +267,11 @@ class LephareEstimator(CatEstimator):
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
+        posterior_output = self.config["posterior_output"]
         for i in range(ng):
-            pdf = np.array(photozlist[i].pdfmap[11].vPDF)
+            pdf = np.array(photozlist[i].pdfmap[posterior_output].vPDF)
             pdfs.append(pdf)
-        zgrid = np.array(photozlist[i].pdfmap[11].xaxis)
+        zgrid = np.array(photozlist[i].pdfmap[posterior_output].xaxis)
         pdfs = np.array(pdfs)
         self.zgrid = zgrid
         zmode = np.zeros(ng)
