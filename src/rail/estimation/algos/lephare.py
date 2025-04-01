@@ -186,6 +186,26 @@ class LephareEstimator(CatEstimator):
             True,
             msg="Use the zero point offsets computed in the inform stage.",
         ),
+        posterior_output=Param(
+            int,
+            11,
+            msg=(
+                "Which posterior distribution to output."
+                "MASS: 0"
+                "SFR: 1"
+                "SSFR: 2"
+                "LDUST: 3"
+                "LIR: 4"
+                "AGE: 5"
+                "COL1: 6"
+                "COL2: 7"
+                "MREF: 8"
+                "MIN_ZG: 9"
+                "MIN_ZQ: 10"
+                "BAY_ZG: 11"
+                "BAY_ZQ: 12"
+            ),
+        ),
         output_keys=Param(
             list,
             ["Z_BEST", "CHI_BEST", "ZQ_BEST", "CHI_QSO", "MOD_STAR", "CHI_STAR"],
@@ -210,9 +230,9 @@ class LephareEstimator(CatEstimator):
     def __init__(self, args, **kwargs):
         super().__init__(args, **kwargs)
         self.lephare_config: dict = {}
-        self.zmin: float| None = None
-        self.zmax: float| None = None
-        self.nzbins: int| None = None
+        self.zmin: float | None = None
+        self.zmax: float | None = None
+        self.nzbins: int | None = None
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)

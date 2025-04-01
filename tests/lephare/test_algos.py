@@ -62,6 +62,7 @@ def test_informer_and_estimator(test_data_dir: str):
         model=inform_lephare.get_handle("model"),
         hdf5_groupname="",
         aliases=dict(input="test_data", output="lephare_estim"),
+        use_inform_offsets=True,
     )
 
     lephare_estimated = estimate_lephare.estimate(testdata_io)
