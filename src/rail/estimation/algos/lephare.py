@@ -12,11 +12,11 @@ import importlib
 lsst_default_config = lp.default_cosmos_config.copy()
 lsst_default_config.update(
     {
-        "CAT_IN": "bidon",
+        "CAT_IN": "undefined",
         "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02",
         "FILTER_CALIB": "0,0,0,0,0,0",
         "FILTER_FILE": "filter_lsst",
-        "FILTER_LIST": "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y3.pb",
+        "FILTER_LIST": "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y.pb",
         "GAL_LIB": "LSST_GAL_BIN",
         "GAL_LIB_IN": "LSST_GAL_BIN",
         "GAL_LIB_OUT": "LSST_GAL_MAG",
