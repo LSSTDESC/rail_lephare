@@ -88,8 +88,18 @@ class LephareInformer(CatInformer):
 
     def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
+
         super().__init__(args, **kwargs)
         self.lephare_config = self.config["lephare_config"]
+        
+        #Put something in place to allow for not rerunning the prepare stage
+        try:
+            self.do_prepare = self.config["do_prepare"]
+            if self.do_prepare.__class__ is not bool:
+                raise RuntimeError("do_prepare argument must be a bool")
+        except KeyError:
+            self.do_prepare = True
+            
         # We need to ensure the requested redshift grid is propagated
         self.zmin = self.config["zmin"]
         self.zmax = self.config["zmax"]
@@ -133,13 +143,16 @@ class LephareInformer(CatInformer):
         ngal = len(training_data[self.config.ref_band])
 
         # The three main lephare specific inform tasks
-        lp.prepare(
-            self.lephare_config,
-            star_config=self.config["star_config"],
-            gal_config=self.config["gal_config"],
-            qso_config=self.config["qso_config"],
-        )
-
+        if self.do_prepare:
+            lp.prepare(
+                self.lephare_config,
+                star_config=self.config["star_config"],
+                gal_config=self.config["gal_config"],
+                qso_config=self.config["qso_config"],
+            )
+        else:
+            print(f"do_prepare set to False, using precomputed files in {self.run_dir}.")
+            
         # Spectroscopic redshifts
         self.szs = training_data[self.config.redshift_col]
 
