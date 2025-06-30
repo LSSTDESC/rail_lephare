@@ -282,7 +282,7 @@ class LephareEstimator(CatEstimator):
         for c in self.config["output_keys"]:
             ancil[c] = np.array(output[c])
         qp_dstn.set_ancil(ancil)
-        self._do_chunk_output(qp_dstn, start, end, first)
+        self._do_chunk_output(qp_dstn, start, end, first, data=data)
 
 
 def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
