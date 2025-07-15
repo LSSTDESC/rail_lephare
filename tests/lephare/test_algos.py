@@ -4,6 +4,7 @@ import numpy as np
 import lephare as lp
 import os
 from rail.core.stage import RailStage
+from rail.core.data import TableHandle
 import matplotlib.pyplot as plt
 import tables_io
 import pytest
@@ -30,8 +31,10 @@ def test_informer_basic():
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
-    traindata_io = tables_io.read(trainFile)
-    testdata_io = tables_io.read(testFile)
+    # traindata_io = tables_io.read(trainFile)
+    # testdata_io = tables_io.read(testFile)
+    train_data_handle = DS.read_file("rail_train_input", TableHandle, trainFile)
+    test_data_handle = DS.read_file("rail_test_input", TableHandle, testFile)
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
@@ -52,7 +55,7 @@ def test_informer_and_estimator(test_data_dir: str):
         nzbins=6,
     )
 
-    inform_lephare.inform(traindata_io)
+    inform_lephare.inform(train_data_handle)
 
     assert os.path.isfile(f"{lp.dm.LEPHAREWORK}/lib_bin/LSST_GAL_BIN.bin")
 
@@ -65,7 +68,7 @@ def test_informer_and_estimator(test_data_dir: str):
         use_inform_offsets=True,
     )
 
-    lephare_estimated = estimate_lephare.estimate(testdata_io)
+    lephare_estimated = estimate_lephare.estimate(test_data_handle)
     assert np.isclose(
         np.sum(lephare_estimated.data[0].pdf(np.linspace(0, 3, 300))), 99.66482986408954
     )
