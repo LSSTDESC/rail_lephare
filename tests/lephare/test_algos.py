@@ -20,6 +20,7 @@ def test_informer_basic():
         hdf5_groupname="",
     )
 
+    inform_lephare.validate()
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
     # Check config zgrid updated to stage param defaults:
@@ -52,6 +53,7 @@ def test_informer_and_estimator(test_data_dir: str):
         nzbins=6,
     )
 
+    inform_lephare.validate()
     inform_lephare.inform(traindata_io)
 
     assert os.path.isfile(f"{lp.dm.LEPHAREWORK}/lib_bin/LSST_GAL_BIN.bin")

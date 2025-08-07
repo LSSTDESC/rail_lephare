@@ -90,6 +90,8 @@ class LephareInformer(CatInformer):
         """Init function, init config stuff (COPIED from rail_bpz)"""
 
         super().__init__(args, **kwargs)
+
+    def validate(self):
         self.lephare_config = self.config["lephare_config"]
         
         #Put something in place to allow for not rerunning the prepare stage
