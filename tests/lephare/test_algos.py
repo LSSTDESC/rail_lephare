@@ -20,6 +20,7 @@ def test_informer_basic():
         hdf5_groupname="",
     )
 
+    inform_lephare.validate()
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
     # Check config zgrid updated to stage param defaults:
