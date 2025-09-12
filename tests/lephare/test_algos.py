@@ -4,6 +4,7 @@ import numpy as np
 import lephare as lp
 import os
 from rail.core.stage import RailStage
+from rail.core.data import TableHandle
 import matplotlib.pyplot as plt
 import tables_io
 import pytest
@@ -27,12 +28,11 @@ def test_informer_basic():
     assert inform_lephare.config["lephare_config"]["Z_STEP"] == "0.01,0.0,3.0"
 
 
-@pytest.mark.slow
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
-    traindata_io = tables_io.read(trainFile)
-    testdata_io = tables_io.read(testFile)
+    traindata_io = DS.read_file("training_data", TableHandle, trainFile)
+    testdata_io = DS.read_file("test_data", TableHandle, testFile)
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
