@@ -93,15 +93,15 @@ class LephareInformer(CatInformer):
 
     def validate(self):
         self.lephare_config = self.config["lephare_config"]
-        
-        #Put something in place to allow for not rerunning the prepare stage
+
+        # Put something in place to allow for not rerunning the prepare stage
         try:
             self.do_prepare = self.config["do_prepare"]
             if self.do_prepare.__class__ is not bool:
                 raise RuntimeError("do_prepare argument must be a bool")
         except KeyError:
             self.do_prepare = True
-            
+
         # We need to ensure the requested redshift grid is propagated
         self.zmin = self.config["zmin"]
         self.zmax = self.config["zmax"]
@@ -153,8 +153,10 @@ class LephareInformer(CatInformer):
                 qso_config=self.config["qso_config"],
             )
         else:
-            print(f"do_prepare set to False, using precomputed files in {self.run_dir}.")
-            
+            print(
+                f"do_prepare set to False, using precomputed files in {self.run_dir}."
+            )
+
         # Spectroscopic redshifts
         self.szs = training_data[self.config.redshift_col]
 
@@ -167,12 +169,12 @@ class LephareInformer(CatInformer):
         else:
             offsets = None
         # We must make a string dictionary to allow pickling and saving
-        config_text_dict = dict()
-        for k in self.config["lephare_config"]:
-            config_text_dict[k] = self.config["lephare_config"][k]
+        lephare_config = lp.keymap_to_string_dict(
+            lp.all_types_to_keymap(self.config["lephare_config"])
+        )
         # Give principle inform config 'model' to instance.
         self.model = dict(
-            lephare_config=config_text_dict, offsets=offsets, run_dir=self.run_dir
+            lephare_config=lephare_config, offsets=offsets, run_dir=self.run_dir
         )
         self.add_data("model", self.model)
 
@@ -225,9 +227,9 @@ class LephareEstimator(CatEstimator):
     def __init__(self, args, **kwargs):
         super().__init__(args, **kwargs)
         self.lephare_config: dict = {}
-        self.zmin: float| None = None
-        self.zmax: float| None = None
-        self.nzbins: int| None = None
+        self.zmin: float | None = None
+        self.zmax: float | None = None
+        self.nzbins: int | None = None
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)
