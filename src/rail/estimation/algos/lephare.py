@@ -7,6 +7,7 @@ import numpy as np
 from astropy.table import Table
 import qp
 import importlib
+import warnings
 
 # We start with the COSMOS default and override with LSST specific values.
 lsst_default_config = lp.default_cosmos_config.copy()
@@ -260,6 +261,16 @@ class LephareEstimator(CatEstimator):
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
+        # Don't let the user run AUTO_ADAPT if APPLY_SYSSHIFT is set
+        if (
+            self.lephare_config.get("APPLY_SYSSHIFT") is not None
+            and self.lephare_config.get("AUTO_ADAPT") == "YES"
+        ):
+            warnings.warn(
+                "AUTO_ADAPT being set to NO to ensure "
+                "it is not rerun on random chunks as APPLY_SYSSHIFT is set."
+            )
+            self.lephare_config.get["AUTO_ADAPT"] = "NO"
         output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
