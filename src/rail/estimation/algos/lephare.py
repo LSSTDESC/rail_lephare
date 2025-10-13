@@ -270,7 +270,7 @@ class LephareEstimator(CatEstimator):
                 "AUTO_ADAPT being set to NO to ensure "
                 "it is not rerun on random chunks as APPLY_SYSSHIFT is set."
             )
-            self.lephare_config.get["AUTO_ADAPT"] = "NO"
+            self.lephare_config["AUTO_ADAPT"] = "NO"
         output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
