@@ -238,6 +238,10 @@ class LephareEstimator(CatEstimator):
             self.lephare_config = self.config["lephare_config"]
         else:
             self.lephare_config = self.model["lephare_config"]
+        # Use string dictionary config in case keymap passed to estimate stage
+        self.lephare_config = lp.keymap_to_string_dict(
+            lp.all_types_to_keymap(self.lephare_config)
+        )
         Z_STEP = self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
