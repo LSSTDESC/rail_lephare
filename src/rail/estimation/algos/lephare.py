@@ -7,7 +7,6 @@ import numpy as np
 from astropy.table import Table
 import qp
 import importlib
-import warnings
 
 # We start with the COSMOS default and override with LSST specific values.
 lsst_default_config = lp.default_cosmos_config.copy()
@@ -166,7 +165,9 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            offsets = lp.calculate_offsets(self.config["lephare_config"], input)
+            offsets = lp.calculate_offsets_from_input(
+                self.config["lephare_config"], input
+            )
         else:
             offsets = None
         # We must make a string dictionary to allow pickling and saving
@@ -175,7 +176,12 @@ class LephareInformer(CatInformer):
         )
         # Give principle inform config 'model' to instance.
         self.model = dict(
-            lephare_config=lephare_config, offsets=offsets, run_dir=self.run_dir
+            lephare_config=lephare_config,
+            offsets=offsets,
+            run_dir=self.run_dir,
+            star_config=self.config["star_config"],
+            gal_config=self.config["gal_config"],
+            qso_config=self.config["qso_config"],
         )
         self.add_data("model", self.model)
 
@@ -265,16 +271,6 @@ class LephareEstimator(CatEstimator):
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
-        # Don't let the user run AUTO_ADAPT if APPLY_SYSSHIFT is set
-        if (
-            self.lephare_config.get("APPLY_SYSSHIFT") is not None
-            and self.lephare_config.get("AUTO_ADAPT") == "YES"
-        ):
-            warnings.warn(
-                "AUTO_ADAPT being set to NO to ensure "
-                "it is not rerun on random chunks as APPLY_SYSSHIFT is set."
-            )
-            self.lephare_config["AUTO_ADAPT"] = "NO"
         output, photozlist = lp.process(self.lephare_config, input)
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
