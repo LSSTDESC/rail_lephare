@@ -176,6 +176,7 @@ class LephareInformer(CatInformer):
         )
         # Give principle inform config 'model' to instance.
         self.model = dict(
+            lephare_version=lp.__version__,
             lephare_config=lephare_config,
             offsets=offsets,
             run_dir=self.run_dir,
