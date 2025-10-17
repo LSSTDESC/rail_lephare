@@ -164,17 +164,23 @@ class LephareInformer(CatInformer):
         input = _rail_to_lephare_input(
             training_data, self.config.bands, self.config.err_bands
         )
-        if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            offsets = lp.calculate_offsets(self.config["lephare_config"], input)
-        else:
-            offsets = None
+        # This will return zeros if AUTO_ADAPT is NO
+        offsets = lp.calculate_offsets_from_input(
+            self.config["lephare_config"], input
+        )
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
         )
         # Give principle inform config 'model' to instance.
         self.model = dict(
-            lephare_config=lephare_config, offsets=offsets, run_dir=self.run_dir
+            lephare_version=lp.__version__,
+            lephare_config=lephare_config,
+            offsets=offsets,
+            run_dir=self.run_dir,
+            star_config=self.config["star_config"],
+            gal_config=self.config["gal_config"],
+            qso_config=self.config["qso_config"],
         )
         self.add_data("model", self.model)
 
@@ -257,6 +263,10 @@ class LephareEstimator(CatEstimator):
             self.lephare_config = self.config["lephare_config"]
         else:
             self.lephare_config = self.model["lephare_config"]
+        # Use string dictionary config in case keymap passed to estimate stage
+        self.lephare_config = lp.keymap_to_string_dict(
+            lp.all_types_to_keymap(self.lephare_config)
+        )
         Z_STEP = self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
