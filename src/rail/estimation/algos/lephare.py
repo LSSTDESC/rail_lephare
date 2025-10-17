@@ -164,12 +164,10 @@ class LephareInformer(CatInformer):
         input = _rail_to_lephare_input(
             training_data, self.config.bands, self.config.err_bands
         )
-        if self.config["lephare_config"]["AUTO_ADAPT"] == "YES":
-            offsets = lp.calculate_offsets_from_input(
-                self.config["lephare_config"], input
-            )
-        else:
-            offsets = None
+        # This will return zeros if AUTO_ADAPT is NO
+        offsets = lp.calculate_offsets_from_input(
+            self.config["lephare_config"], input
+        )
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
