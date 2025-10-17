@@ -203,6 +203,26 @@ class LephareEstimator(CatEstimator):
             True,
             msg="Use the zero point offsets computed in the inform stage.",
         ),
+        posterior_output=Param(
+            int,
+            11,
+            msg=(
+                "Which posterior distribution to output."
+                "MASS: 0"
+                "SFR: 1"
+                "SSFR: 2"
+                "LDUST: 3"
+                "LIR: 4"
+                "AGE: 5"
+                "COL1: 6"
+                "COL2: 7"
+                "MREF: 8"
+                "MIN_ZG: 9"
+                "MIN_ZQ: 10"
+                "BAY_ZG: 11"
+                "BAY_ZQ: 12"
+            ),
+        ),
         output_keys=Param(
             list,
             ["Z_BEST", "CHI_BEST", "ZQ_BEST", "CHI_QSO", "MOD_STAR", "CHI_STAR"],
@@ -264,10 +284,11 @@ class LephareEstimator(CatEstimator):
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
+        posterior_output = self.config["posterior_output"]
         for i in range(ng):
-            pdf = np.array(photozlist[i].pdfmap[11].vPDF)
+            pdf = np.array(photozlist[i].pdfmap[posterior_output].vPDF)
             pdfs.append(pdf)
-        zgrid = np.array(photozlist[i].pdfmap[11].xaxis)
+        zgrid = np.array(photozlist[i].pdfmap[posterior_output].xaxis)
         pdfs = np.array(pdfs)
         self.zgrid = zgrid
         zmode = np.zeros(ng)
