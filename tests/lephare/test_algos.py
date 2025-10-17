@@ -21,13 +21,13 @@ def test_informer_basic():
         hdf5_groupname="",
     )
 
+    inform_lephare.validate()
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
     # Check config zgrid updated to stage param defaults:
     assert inform_lephare.config["lephare_config"]["Z_STEP"] == "0.01,0.0,3.0"
 
 
-@pytest.mark.slow
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
