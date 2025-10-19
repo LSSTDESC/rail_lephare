@@ -24,6 +24,7 @@ lsst_default_config.update(
         "INP_TYPE": "M",
         "MABS_CONTEXT": "63",
         "MABS_REF": "1",
+        "MAG_ABS_QSO": "-30,-20.5",
         "QSO_LIB": "LSST_QSO_BIN",
         "QSO_LIB_IN": "LSST_QSO_BIN",
         "QSO_LIB_OUT": "LSST_QSO_MAG",
@@ -61,7 +62,10 @@ class LephareInformer(CatInformer):
         ),
         star_config=Param(
             dict,
-            dict(LIB_ASCII="YES"),
+            dict(
+                LIB_ASCII="YES",
+                MOD_EXTINC="0,0",
+            ),
             msg="Star config overrides.",
         ),
         gal_config=Param(
@@ -72,7 +76,6 @@ class LephareInformer(CatInformer):
                 EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
                 EM_LINES="EMP_UV",
                 EM_DISPERSION="1.",
-                MAG_ABS_QSO="-30,-20.5",
             ),
             msg="Galaxy config overrides.",
         ),
