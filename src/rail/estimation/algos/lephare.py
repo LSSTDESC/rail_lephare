@@ -83,6 +83,7 @@ class LephareInformer(CatInformer):
                 MOD_EXTINC="0,1000",
                 EB_V="0.,0.1,0.2,0.3",
                 EXTINC_LAW="SB_calzetti.dat",
+                EM_LINES="NO", 
             ),
             msg="QSO config overrides.",
         ),
