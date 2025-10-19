@@ -31,6 +31,7 @@ lsst_default_config.update(
         "STAR_LIB_IN": "LSST_STAR_BIN",
         "STAR_LIB_OUT": "LSST_STAR_MAG",
         "ZPHOTLIB": "LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG",
+        "Z_STEP": "0.02,0.,6.",
     }
 )
 
@@ -70,7 +71,8 @@ class LephareInformer(CatInformer):
                 MOD_EXTINC="18,26,26,33,26,33,26,33",
                 EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
                 EM_LINES="EMP_UV",
-                EM_DISPERSION="0.5,0.75,1.,1.5,2.",
+                EM_DISPERSION="1.",
+                MAG_ABS_QSO="-30,-20.5",
             ),
             msg="Galaxy config overrides.",
         ),
