@@ -13,6 +13,7 @@ lsst_default_config = lp.default_cosmos_config.copy()
 lsst_default_config.update(
     {
         "CAT_IN": "undefined",
+        "EM_DISPERSION": "1.",
         "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02",
         "FILTER_CALIB": "0,0,0,0,0,0",
         "FILTER_FILE": "filter_lsst",
@@ -75,7 +76,6 @@ class LephareInformer(CatInformer):
                 MOD_EXTINC="18,26,26,33,26,33,26,33",
                 EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
                 EM_LINES="EMP_UV",
-                EM_DISPERSION="1.",
             ),
             msg="Galaxy config overrides.",
         ),
