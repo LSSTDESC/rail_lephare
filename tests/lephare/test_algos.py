@@ -1,13 +1,14 @@
-import numpy as np
-from rail.estimation.algos.lephare import LephareInformer, LephareEstimator
-import numpy as np
-import lephare as lp
 import os
-from rail.core.stage import RailStage
-from rail.core.data import TableHandle
+
+import lephare as lp
 import matplotlib.pyplot as plt
-import tables_io
+import numpy as np
 import pytest
+import tables_io
+from rail.core.data import TableHandle
+from rail.core.stage import RailStage
+
+from rail.estimation.algos.lephare import LephareEstimator, LephareInformer
 
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True

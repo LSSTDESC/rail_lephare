@@ -1,12 +1,13 @@
-from rail.estimation.estimator import CatEstimator, CatInformer
-from rail.core.common_params import SHARED_PARAMS
-from ceci.config import StageParameter as Param
+import importlib
 import os
+
 import lephare as lp
 import numpy as np
-from astropy.table import Table
 import qp
-import importlib
+from astropy.table import Table
+from ceci.config import StageParameter as Param
+from rail.core.common_params import SHARED_PARAMS
+from rail.estimation.estimator import CatEstimator, CatInformer
 
 # We start with the COSMOS default and override with LSST specific values.
 lsst_default_config = lp.default_cosmos_config.copy()
@@ -165,9 +166,7 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         # This will return zeros if AUTO_ADAPT is NO
-        offsets = lp.calculate_offsets_from_input(
-            self.config["lephare_config"], input
-        )
+        offsets = lp.calculate_offsets_from_input(self.config["lephare_config"], input)
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
