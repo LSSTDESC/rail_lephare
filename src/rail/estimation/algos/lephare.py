@@ -44,6 +44,7 @@ class LephareInformer(CatInformer):
 
     name = "LephareInformer"
     entrypoint_function = "inform"  # the user-facing science function for this class
+    interactive_function = "lephare_informer"
     config_options = CatInformer.config_options.copy()
     config_options.update(
         zmin=SHARED_PARAMS,
@@ -190,6 +191,7 @@ class LephareEstimator(CatEstimator):
 
     name = "LephareEstimator"
     entrypoint_function = "estimate"  # the user-facing science function for this class
+    interactive_function = "lephare_estimator"
     config_options = CatEstimator.config_options.copy()
 
     # Add Lephare-specific configuration options here
