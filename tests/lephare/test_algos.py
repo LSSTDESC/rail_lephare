@@ -10,8 +10,8 @@ from rail.core.stage import RailStage
 
 from rail.estimation.algos.lephare import LephareEstimator, LephareInformer
 
-DS = RailStage.data_store
-DS.__class__.allow_overwrite = True
+# DS = RailStage.data_store
+# DS.__class__.allow_overwrite = True
 
 
 def test_informer_basic():
@@ -32,10 +32,12 @@ def test_informer_basic():
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
-    # traindata_io = tables_io.read(trainFile)
-    # testdata_io = tables_io.read(testFile)
-    train_data_handle = DS.read_file("rail_train_input", TableHandle, trainFile)
-    test_data_handle = DS.read_file("rail_test_input", TableHandle, testFile)
+    train_data_handle = tables_io.read(trainFile)
+    test_data_handle = tables_io.read(testFile)
+    # train_data_handle = TableHandle("rail_train_input", path=trainFile)
+    # test_data_handle = TableHandle("rail_test_input", path=testFile)
+    # train_data_handle = DS.read_file("rail_train_input", TableHandle, trainFile)
+    # test_data_handle = DS.read_file("rail_test_input", TableHandle, testFile)
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
     lephare_config = lp.read_config(lephare_config_file)
