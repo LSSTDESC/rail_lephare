@@ -84,6 +84,10 @@ class LephareInformer(CatInformer):
             ),
             msg="QSO config overrides.",
         ),
+        galametz_reddening=Param(
+            bool,
+            False,
+            msg=("Whether to compute the Galametz et al. 2017 reddening correction."
     )
 
     def __init__(self, args, **kwargs):
@@ -168,6 +172,13 @@ class LephareInformer(CatInformer):
         offsets = lp.calculate_offsets_from_input(
             self.config["lephare_config"], input_table
         )
+        # Compute model reddening if requested.
+        if self.config["galametz_reddening"]:
+            reddening=lp.compute_model_reddening(
+                self.lephare_config
+            ) 
+        else:
+            reddening=None
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
@@ -181,6 +192,7 @@ class LephareInformer(CatInformer):
             star_config=self.config["star_config"],
             gal_config=self.config["gal_config"],
             qso_config=self.config["qso_config"],
+            reddening=reddening,
         )
         self.add_data("model", self.model)
 
@@ -248,7 +260,7 @@ class LephareEstimator(CatEstimator):
                 "is to facilitate manually moving intermediate files."
             ),
         ),
-        reddening=Param(
+        reddening_file=Param(
             str,
             "None",
             msg=("Numpy array file giving the reddening values."),
@@ -297,10 +309,15 @@ class LephareEstimator(CatEstimator):
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
-        if self.config["reddening"] == "None":
+        # Run LePHARE with or without reddening as required.
+        if (self.config["reddening"] == "None") and (self.model["reddening"] is None):
             output, photozlist = lp.process(self.lephare_config, input_table)
         else:
-            reddening = np.load(self.config["reddening"])
+            if os.path.isfile(self.config["reddening"]):
+                reddening = np.load(self.config["reddening"])
+            if self.model["redenning"] is not None:
+                reddening = self.model["reddening"]
+            # ebvmw for every object is required for the reddening correction.
             output, photozlist = lp.process(
                 self.lephare_config,
                 input_table,
