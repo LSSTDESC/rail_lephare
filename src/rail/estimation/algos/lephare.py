@@ -87,7 +87,8 @@ class LephareInformer(CatInformer):
         galametz_reddening=Param(
             bool,
             False,
-            msg=("Whether to compute the Galametz et al. 2017 reddening correction."
+            msg="Whether to compute the Galametz et al. 2017 reddening correction.",
+        ),
     )
 
     def __init__(self, args, **kwargs):
@@ -174,11 +175,9 @@ class LephareInformer(CatInformer):
         )
         # Compute model reddening if requested.
         if self.config["galametz_reddening"]:
-            reddening=lp.compute_model_reddening(
-                self.lephare_config
-            ) 
+            reddening = lp.compute_model_reddening(self.lephare_config)
         else:
-            reddening=None
+            reddening = None
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
