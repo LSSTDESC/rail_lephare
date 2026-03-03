@@ -173,7 +173,6 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         # This will return zeros if AUTO_ADAPT is NO
-<<<<<<< HEAD
         offsets = lp.calculate_offsets_from_input(
             self.config["lephare_config"], input_table
         )
@@ -182,9 +181,6 @@ class LephareInformer(CatInformer):
             reddening = lp.compute_model_reddening(self.lephare_config)
         else:
             reddening = None
-=======
-        offsets = lp.calculate_offsets_from_input(self.config["lephare_config"], input)
->>>>>>> main
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
