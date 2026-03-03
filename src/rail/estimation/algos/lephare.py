@@ -314,11 +314,13 @@ class LephareEstimator(CatEstimator):
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
         # Run LePHARE with or without reddening as required.
-        if (self.config["reddening"] == "None") and (self.model["reddening"] is None):
+        if (self.config["reddening_file"] == "None") and (
+            self.model["reddening"] is None
+        ):
             output, photozlist = lp.process(self.lephare_config, input_table)
         else:
-            if os.path.isfile(self.config["reddening"]):
-                reddening = np.load(self.config["reddening"])
+            if os.path.isfile(self.config["reddening_file"]):
+                reddening = np.load(self.config["reddening_file"])
             if self.model["redenning"] is not None:
                 reddening = self.model["reddening"]
             # ebvmw for every object is required for the reddening correction.
