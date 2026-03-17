@@ -111,7 +111,7 @@ class LephareInformer(CatInformer):
                 LIB_ASCII="YES",
                 MOD_EXTINC="0,1000",
                 EB_V="0.,0.1,0.2,0.3",
-                EXTINC_LAW="SB_calzetti.dat",
+                EXTINC_LAW="SMC_prevot.dat",
                 EM_LINES="NO", 
             ),
             msg="QSO config overrides.",
