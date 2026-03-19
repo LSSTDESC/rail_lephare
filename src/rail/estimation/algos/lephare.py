@@ -63,7 +63,7 @@ def _add_sub_config(
     prefix: str,
 ) -> None:
     """Add all sub-config parameters to the stage config with
-    the requested prefix.  This will make the correct paramter types
+    the requested prefix.  This will make the correct parameter types
     and defaults
     """
     for key, val in sub_config.items():
@@ -140,7 +140,7 @@ class LephareInformer(CatInformer):
 
         Parameters
         ==========
-        lepahre_config : `dict`
+        lephare_config : `dict`
             A dictionary of the lephare config keywords.
         """
         self.lephare_config = lephare_config
