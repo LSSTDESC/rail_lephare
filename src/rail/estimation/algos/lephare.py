@@ -1,11 +1,13 @@
 import importlib
 import os
+from typing import Any
 
 import lephare as lp
 import numpy as np
 import qp
 from astropy.table import Table
 from ceci.config import StageParameter as Param
+from ceci.config import StageConfig
 from rail.core.common_params import SHARED_PARAMS
 from rail.estimation.estimator import CatEstimator, CatInformer
 
@@ -35,6 +37,48 @@ lsst_default_config.update(
     }
 )
 
+star_default_config=dict(
+    LIB_ASCII="YES"
+)
+
+gal_default_config=dict(
+    LIB_ASCII="YES",
+    MOD_EXTINC="18,26,26,33,26,33,26,33",
+    EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
+    EM_LINES="EMP_UV",
+    EM_DISPERSION="0.5,0.75,1.,1.5,2.",
+)
+
+qso_default_config=dict(
+    LIB_ASCII="YES",
+    MOD_EXTINC="0,1000",
+    EB_V="0.,0.1,0.2,0.3",
+    EXTINC_LAW="SB_calzetti.dat",
+)
+
+
+def _add_sub_config(
+    config: dict[str, Any],
+    sub_config: dict[str, Any],
+    prefix: str,
+) -> None:
+    """Add all sub-config parameters to the stage config with
+    the requested prefix.  This will make the correct paramter types
+    and defaults
+    """
+    for key, val in sub_config.items():
+        dtype = type(val)
+        default = val
+        param = Param(dtype=dtype, default=default)
+        config[f"{prefix}{key}"] = param
+    
+
+def _get_sub_config(config: StageConfig, prefix: str) -> dict[str, Any]:
+    """Extract all config parameters that start with a
+    particular prefix into a dict"""
+    out_dict = {key[len(prefix):]: val for key, val in config.items() if key.find(prefix) == 0}
+    return out_dict
+
 
 class LephareInformer(CatInformer):
     """Inform stage for LephareEstimator
@@ -56,38 +100,11 @@ class LephareInformer(CatInformer):
         err_bands=SHARED_PARAMS,
         ref_band=SHARED_PARAMS,
         redshift_col=SHARED_PARAMS,
-        lephare_config=Param(
-            dict,
-            lsst_default_config,
-            msg="The lephare config keymap.",
-        ),
-        star_config=Param(
-            dict,
-            dict(LIB_ASCII="YES"),
-            msg="Star config overrides.",
-        ),
-        gal_config=Param(
-            dict,
-            dict(
-                LIB_ASCII="YES",
-                MOD_EXTINC="18,26,26,33,26,33,26,33",
-                EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
-                EM_LINES="EMP_UV",
-                EM_DISPERSION="0.5,0.75,1.,1.5,2.",
-            ),
-            msg="Galaxy config overrides.",
-        ),
-        qso_config=Param(
-            dict,
-            dict(
-                LIB_ASCII="YES",
-                MOD_EXTINC="0,1000",
-                EB_V="0.,0.1,0.2,0.3",
-                EXTINC_LAW="SB_calzetti.dat",
-            ),
-            msg="QSO config overrides.",
-        ),
     )
+    _add_sub_config(config_options, lsst_default_config, "lephare.")             
+    _add_sub_config(config_options, star_default_config, "gal.")        
+    _add_sub_config(config_options, gal_default_config, "gal.")
+    _add_sub_config(config_options, qso_default_config, "qso.")        
 
     def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
@@ -95,7 +112,7 @@ class LephareInformer(CatInformer):
         super().__init__(args, **kwargs)
 
     def validate(self):
-        self.lephare_config = self.config["lephare_config"]
+        self.lephare_config = _get_sub_config(self.config, 'lephare.')
 
         # Put something in place to allow for not rerunning the prepare stage
         try:
@@ -114,7 +131,7 @@ class LephareInformer(CatInformer):
         print(
             f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params."
         )
-        self.config["lephare_config"]["Z_STEP"] = Z_STEP
+        self.config["lephare.Z_STEP"] = Z_STEP
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
 
@@ -147,13 +164,17 @@ class LephareInformer(CatInformer):
         # Get number of sources
         ngal = len(training_data[self.config.ref_band])
 
+        star_config = _get_sub_config(self.config, 'star.')
+        gal_config = _get_sub_config(self.config, 'gal.')
+        qso_config = _get_sub_config(self.config, 'gso.')
+        
         # The three main lephare specific inform tasks
         if self.do_prepare:
             lp.prepare(
                 self.lephare_config,
-                star_config=self.config["star_config"],
-                gal_config=self.config["gal_config"],
-                qso_config=self.config["qso_config"],
+                star_config=star_config,
+                gal_config=gal_config,
+                qso_config=qso_config,
             )
         else:
             print(
@@ -168,20 +189,20 @@ class LephareInformer(CatInformer):
             training_data, self.config.bands, self.config.err_bands
         )
         # This will return zeros if AUTO_ADAPT is NO
-        offsets = lp.calculate_offsets_from_input(self.config["lephare_config"], input)
+        offsets = lp.calculate_offsets_from_input(self.lephare_config, input)
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
-            lp.all_types_to_keymap(self.config["lephare_config"])
+            lp.all_types_to_keymap(self.lephare_config)
         )
         # Give principle inform config 'model' to instance.
         self.model = dict(
             lephare_version=lp.__version__,
-            lephare_config=lephare_config,
+            lephare_config=self.lephare_config,
             offsets=offsets,
             run_dir=self.run_dir,
-            star_config=self.config["star_config"],
-            gal_config=self.config["gal_config"],
-            qso_config=self.config["qso_config"],
+            star_config=star_config,
+            gal_config=gal_config,
+            qso_config=qso_config,
         )
         self.add_data("model", self.model)
 
@@ -202,10 +223,10 @@ class LephareEstimator(CatEstimator):
         ref_band=SHARED_PARAMS,
         err_bands=SHARED_PARAMS,
         redshift_col=SHARED_PARAMS,
-        lephare_config=Param(
-            dict,
-            {},
-            msg="The lephare config keymap. If unset we load it from the model.",
+        lephare_config_from_model=Param(
+            bool,
+            True,
+            "Load lephare config keymap from model",
         ),
         use_inform_offsets=Param(
             bool,
@@ -252,6 +273,7 @@ class LephareEstimator(CatEstimator):
             ),
         ),
     )
+    _add_sub_config(config_options, lsst_default_config, "lephare.")
 
     def __init__(self, args, **kwargs):
         super().__init__(args, **kwargs)
@@ -262,10 +284,10 @@ class LephareEstimator(CatEstimator):
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)
-        if self.config["lephare_config"]:
-            self.lephare_config = self.config["lephare_config"]
-        else:
+        if self.config["lephare_config_from_model"]:
             self.lephare_config = self.model["lephare_config"]
+        else:
+            self.lephare_config = _get_sub_config(self.config, "lephare.")
         # Use string dictionary config in case keymap passed to estimate stage
         self.lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.lephare_config)
