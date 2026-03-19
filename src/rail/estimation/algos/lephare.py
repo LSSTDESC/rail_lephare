@@ -102,7 +102,7 @@ class LephareInformer(CatInformer):
         redshift_col=SHARED_PARAMS,
     )
     _add_sub_config(config_options, lsst_default_config, "lephare.")             
-    _add_sub_config(config_options, star_default_config, "gal.")        
+    _add_sub_config(config_options, star_default_config, "star.")
     _add_sub_config(config_options, gal_default_config, "gal.")
     _add_sub_config(config_options, qso_default_config, "qso.")        
 
@@ -166,7 +166,7 @@ class LephareInformer(CatInformer):
 
         star_config = _get_sub_config(self.config, 'star.')
         gal_config = _get_sub_config(self.config, 'gal.')
-        qso_config = _get_sub_config(self.config, 'gso.')
+        qso_config = _get_sub_config(self.config, 'qso.')
         
         # The three main lephare specific inform tasks
         if self.do_prepare:
