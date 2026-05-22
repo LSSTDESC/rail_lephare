@@ -26,6 +26,7 @@ lsst_default_config.update(
         "INP_TYPE": "M",
         "MABS_CONTEXT": "63",
         "MABS_REF": "1",
+        "MAG_REF": "2",
         "MAG_ABS_QSO": "-30,-20.5",
         "QSO_LIB": "LSST_QSO_BIN",
         "QSO_LIB_IN": "LSST_QSO_BIN",
