@@ -87,11 +87,6 @@ class LephareInformer(CatInformer):
             ),
             msg="QSO config overrides.",
         ),
-        galametz_reddening=Param(
-            bool,
-            False,
-            msg="Whether to compute the Galametz et al. 2017 reddening correction.",
-        ),
     )
 
     def __init__(self, args, **kwargs):
@@ -176,11 +171,6 @@ class LephareInformer(CatInformer):
         offsets = lp.calculate_offsets_from_input(
             self.config["lephare_config"], input_table
         )
-        # Compute model reddening if requested.
-        if self.config["galametz_reddening"]:
-            reddening = lp.compute_model_reddening(self.lephare_config)
-        else:
-            reddening = None
         # We must make a string dictionary to allow pickling and saving
         lephare_config = lp.keymap_to_string_dict(
             lp.all_types_to_keymap(self.config["lephare_config"])
@@ -194,7 +184,6 @@ class LephareInformer(CatInformer):
             star_config=self.config["star_config"],
             gal_config=self.config["gal_config"],
             qso_config=self.config["qso_config"],
-            reddening=reddening,
         )
         self.add_data("model", self.model)
 
@@ -336,8 +325,8 @@ class LephareEstimator(CatEstimator):
                 ebvmw=data[self.config["ebvmw_col"]],
                 write_outputs=self.config["write_outputs"],
             )
-        if self.config["write_outputs"]:
-            output.write(f"{self.run_dir}/{self.name}_{start}_{end}.fits")
+        # if self.config["write_outputs"]:
+        #     output.write(f"{self.run_dir}/{self.name}_{start}_{end}.fits")
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
@@ -362,6 +351,8 @@ class LephareEstimator(CatEstimator):
         ancil = dict(zmode=zmode, zmean=zmean)
         # Add the requested outputs.
         for c in self.config["output_keys"]:
+            if output[c].dtype.kind in ["U", "O"]:
+                output[c] = output[c].astype("S")
             ancil[c] = np.array(output[c])
         qp_dstn.set_ancil(ancil)
         self._do_chunk_output(qp_dstn, start, end, first, data=data)
