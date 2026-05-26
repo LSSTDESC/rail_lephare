@@ -264,10 +264,18 @@ class LephareEstimator(CatEstimator):
                 "is to facilitate manually moving intermediate files."
             ),
         ),
-        reddening_file=Param(
+        write_outputs=Param(
+            bool,
+            False,
+            msg="Whether to write the output files.",
+        ),
+        ebvmw_col=Param(
             str,
             "None",
-            msg=("Numpy array file giving the reddening values."),
+            msg=(
+                "Column in the data table containing the E(B-V) values."
+                "This is the only way to use Galametz reddening due to chunking."
+            ),
         ),
     )
 
@@ -314,22 +322,22 @@ class LephareEstimator(CatEstimator):
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
         # Run LePHARE with or without reddening as required.
-        if (self.config["reddening_file"] == "None") and (
-            self.model["reddening"] is None
-        ):
-            output, photozlist = lp.process(self.lephare_config, input_table)
+        if self.config["ebvmw_col"] == "None":
+            output, photozlist = lp.process(
+                self.lephare_config,
+                input_table,
+                write_outputs=self.config["write_outputs"],
+            )
         else:
-            if os.path.isfile(self.config["reddening_file"]):
-                reddening = np.load(self.config["reddening_file"])
-            if self.model["redenning"] is not None:
-                reddening = self.model["reddening"]
             # ebvmw for every object is required for the reddening correction.
             output, photozlist = lp.process(
                 self.lephare_config,
                 input_table,
-                reddening=reddening,
-                ebvmw=data["ebvmw"],
+                ebvmw=data[self.config["ebvmw_col"]],
+                write_outputs=self.config["write_outputs"],
             )
+        if self.config["write_outputs"]:
+            output.write(f"{self.run_dir}/{self.name}_{start}_{end}.fits")
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
