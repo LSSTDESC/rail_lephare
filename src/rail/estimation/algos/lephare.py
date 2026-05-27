@@ -273,14 +273,6 @@ class LephareEstimator(CatEstimator):
             False,
             msg="Whether to write the output files.",
         ),
-        ebvmw_col=Param(
-            str,
-            "None",
-            msg=(
-                "Column in the data table containing the E(B-V) values."
-                "This is the only way to use Galametz reddening due to chunking."
-            ),
-        ),
     )
     _add_sub_config(config_options, lsst_default_config, "lephare.")
 
@@ -297,10 +289,7 @@ class LephareEstimator(CatEstimator):
             self.lephare_config = self.model["lephare_config"]
         else:
             self.lephare_config = _get_sub_config(self.config, "lephare.")
-        # Use string dictionary config in case keymap passed to estimate stage
-        self.lephare_config = lp.keymap_to_string_dict(
-            lp.all_types_to_keymap(self.lephare_config)
-        )
+
         Z_STEP = self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
@@ -326,23 +315,13 @@ class LephareEstimator(CatEstimator):
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
-        # Run LePHARE with or without reddening as required.
-        if self.config["ebvmw_col"] == "None":
-            output, photozlist = lp.process(
-                self.lephare_config,
-                input_table,
-                write_outputs=self.config["write_outputs"],
-            )
-        else:
-            # ebvmw for every object is required for the reddening correction.
-            output, photozlist = lp.process(
-                self.lephare_config,
-                input_table,
-                ebvmw=data[self.config["ebvmw_col"]],
-                write_outputs=self.config["write_outputs"],
-            )
-        # if self.config["write_outputs"]:
-        #     output.write(f"{self.run_dir}/{self.name}_{start}_{end}.fits")
+
+        output, photozlist = lp.process(
+            self.lephare_config,
+            input_table,
+            write_outputs=self.config["write_outputs"],
+        )
+
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
