@@ -58,7 +58,7 @@ def test_informer_and_estimator(test_data_dir: str):
 
     inform_lephare.inform(train_data_handle)
 
-    assert inform_lephare.model["lephare.TEST_CONFIG"] == "dummy"
+    assert inform_lephare.model["lephare_config"]["TEST_CONFIG"] == "dummy"
 
     assert os.path.isfile(f"{lp.dm.LEPHAREWORK}/lib_bin/LSST_GAL_BIN.bin")
 
