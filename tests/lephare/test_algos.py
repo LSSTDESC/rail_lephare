@@ -36,18 +36,20 @@ def test_informer_and_estimator(test_data_dir: str):
 
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
-    lephare_config = lp.read_config(lephare_config_file)
+    lephare_config = lp.keymap_to_string_dict(lp.read_config(lephare_config_file))
     lp.data_retrieval.get_auxiliary_data(
         keymap=lephare_config,
         additional_files=["examples/output.para"],
     )
+
+    lephare_config["TEST_CONFIG"] = "dummy"
 
     inform_lephare = LephareInformer.make_stage(
         name="inform_Lephare",
         nondetect_val=np.nan,
         model="lephare.pkl",
         hdf5_groupname="",
-        lephare_config=lp.keymap_to_string_dict(lephare_config),
+        **{f"lephare.{k}": v for k, v in lephare_config.items()},
         # Use a very sparse redshift grid to speed up test:
         zmin=0,
         zmax=5,
@@ -55,6 +57,8 @@ def test_informer_and_estimator(test_data_dir: str):
     )
 
     inform_lephare.inform(train_data_handle)
+
+    assert inform_lephare.model["lephare.TEST_CONFIG"] == "dummy"
 
     assert os.path.isfile(f"{lp.dm.LEPHAREWORK}/lib_bin/LSST_GAL_BIN.bin")
 
