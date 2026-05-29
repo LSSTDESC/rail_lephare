@@ -16,16 +16,16 @@ lsst_default_config = lp.default_cosmos_config.copy()
 lsst_default_config.update(
     {
         "CAT_IN": "undefined",
-        "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02",
-        "FILTER_CALIB": "0,0,0,0,0,0",
+        "ERR_SCALE": "0.02",
+        "FILTER_CALIB": "0",
         "FILTER_FILE": "filter_lsst",
         "FILTER_LIST": "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y.pb",
         "GAL_LIB": "LSST_GAL_BIN",
         "GAL_LIB_IN": "LSST_GAL_BIN",
         "GAL_LIB_OUT": "LSST_GAL_MAG",
-        "GLB_CONTEXT": "63",
+        "GLB_CONTEXT": "0",
         "INP_TYPE": "M",
-        "MABS_CONTEXT": "63",
+        "MABS_CONTEXT": "0",
         "MABS_REF": "1",
         "QSO_LIB": "LSST_QSO_BIN",
         "QSO_LIB_IN": "LSST_QSO_BIN",
@@ -108,7 +108,6 @@ class LephareInformer(CatInformer):
 
     def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
-
         super().__init__(args, **kwargs)
 
     def validate(self):
