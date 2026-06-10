@@ -1,16 +1,14 @@
-import numpy as np
-from rail.estimation.algos.lephare import LephareInformer, LephareEstimator
-import numpy as np
-import lephare as lp
 import os
-from rail.core.stage import RailStage
-from rail.core.data import TableHandle
-import matplotlib.pyplot as plt
-import tables_io
-import pytest
 
-DS = RailStage.data_store
-DS.__class__.allow_overwrite = True
+import lephare as lp
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import tables_io
+from rail.core.data import TableHandle
+from rail.core.stage import RailStage
+
+from rail.estimation.algos.lephare import LephareEstimator, LephareInformer
 
 
 def test_informer_basic():
@@ -25,30 +23,33 @@ def test_informer_basic():
     assert inform_lephare.name == "LephareInformer"
     assert inform_lephare.config["name"] == "inform_Lephare"
     # Check config zgrid updated to stage param defaults:
-    assert inform_lephare.config["lephare_config"]["Z_STEP"] == "0.01,0.0,3.0"
+    assert inform_lephare.config["lephare.Z_STEP"] == "0.01,0.0,3.0"
 
 
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
-    # traindata_io = tables_io.read(trainFile)
-    # testdata_io = tables_io.read(testFile)
-    train_data_handle = DS.read_file("rail_train_input", TableHandle, trainFile)
-    test_data_handle = DS.read_file("rail_test_input", TableHandle, testFile)
+    train_data_handle = tables_io.read(trainFile)
+    test_data_handle = tables_io.read(testFile)
+    # train_data_handle = TableHandle("rail_train_input", path=trainFile)
+    # test_data_handle = TableHandle("rail_test_input", path=testFile)
+
     # Load the test params with a sparse redshift grid
     lephare_config_file = os.path.join(test_data_dir, "lsst.para")
-    lephare_config = lp.read_config(lephare_config_file)
+    lephare_config = lp.keymap_to_string_dict(lp.read_config(lephare_config_file))
     lp.data_retrieval.get_auxiliary_data(
         keymap=lephare_config,
         additional_files=["examples/output.para"],
     )
+
+    lephare_config["TEST_CONFIG"] = "dummy"
 
     inform_lephare = LephareInformer.make_stage(
         name="inform_Lephare",
         nondetect_val=np.nan,
         model="lephare.pkl",
         hdf5_groupname="",
-        lephare_config=lp.keymap_to_string_dict(lephare_config),
+        **{f"lephare.{k}": v for k, v in lephare_config.items()},
         # Use a very sparse redshift grid to speed up test:
         zmin=0,
         zmax=5,
@@ -56,6 +57,8 @@ def test_informer_and_estimator(test_data_dir: str):
     )
 
     inform_lephare.inform(train_data_handle)
+
+    assert inform_lephare.model["lephare_config"]["TEST_CONFIG"] == "dummy"
 
     assert os.path.isfile(f"{lp.dm.LEPHAREWORK}/lib_bin/LSST_GAL_BIN.bin")
 
