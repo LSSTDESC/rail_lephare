@@ -16,16 +16,16 @@ lsst_default_config = lp.default_cosmos_config.copy()
 lsst_default_config.update(
     {
         "CAT_IN": "undefined",
-        "ERR_SCALE": "0.02,0.02,0.02,0.02,0.02,0.02",
-        "FILTER_CALIB": "0,0,0,0,0,0",
+        "ERR_SCALE": "0.02",
+        "FILTER_CALIB": "0",
         "FILTER_FILE": "filter_lsst",
         "FILTER_LIST": "lsst/total_u.pb,lsst/total_g.pb,lsst/total_r.pb,lsst/total_i.pb,lsst/total_z.pb,lsst/total_y.pb",
         "GAL_LIB": "LSST_GAL_BIN",
         "GAL_LIB_IN": "LSST_GAL_BIN",
         "GAL_LIB_OUT": "LSST_GAL_MAG",
-        "GLB_CONTEXT": "63",
+        "GLB_CONTEXT": "0",
         "INP_TYPE": "M",
-        "MABS_CONTEXT": "63",
+        "MABS_CONTEXT": "0",
         "MABS_REF": "1",
         "QSO_LIB": "LSST_QSO_BIN",
         "QSO_LIB_IN": "LSST_QSO_BIN",
@@ -37,11 +37,9 @@ lsst_default_config.update(
     }
 )
 
-star_default_config=dict(
-    LIB_ASCII="YES"
-)
+star_default_config = dict(LIB_ASCII="YES")
 
-gal_default_config=dict(
+gal_default_config = dict(
     LIB_ASCII="YES",
     MOD_EXTINC="18,26,26,33,26,33,26,33",
     EXTINC_LAW="SMC_prevot.dat,SB_calzetti.dat,SB_calzetti_bump1.dat,SB_calzetti_bump2.dat",
@@ -49,7 +47,7 @@ gal_default_config=dict(
     EM_DISPERSION="0.5,0.75,1.,1.5,2.",
 )
 
-qso_default_config=dict(
+qso_default_config = dict(
     LIB_ASCII="YES",
     MOD_EXTINC="0,1000",
     EB_V="0.,0.1,0.2,0.3",
@@ -71,12 +69,14 @@ def _add_sub_config(
         default = val
         param = Param(dtype=dtype, default=default)
         config[f"{prefix}{key}"] = param
-    
+
 
 def _get_sub_config(config: StageConfig, prefix: str) -> dict[str, Any]:
     """Extract all config parameters that start with a
     particular prefix into a dict"""
-    out_dict = {key[len(prefix):]: val for key, val in config.items() if key.find(prefix) == 0}
+    out_dict = {
+        key[len(prefix) :]: val for key, val in config.items() if key.find(prefix) == 0
+    }
     return out_dict
 
 
@@ -101,18 +101,17 @@ class LephareInformer(CatInformer):
         ref_band=SHARED_PARAMS,
         redshift_col=SHARED_PARAMS,
     )
-    _add_sub_config(config_options, lsst_default_config, "lephare.")             
+    _add_sub_config(config_options, lsst_default_config, "lephare.")
     _add_sub_config(config_options, star_default_config, "star.")
     _add_sub_config(config_options, gal_default_config, "gal.")
-    _add_sub_config(config_options, qso_default_config, "qso.")        
+    _add_sub_config(config_options, qso_default_config, "qso.")
 
     def __init__(self, args, **kwargs):
         """Init function, init config stuff (COPIED from rail_bpz)"""
-
         super().__init__(args, **kwargs)
 
     def validate(self):
-        self.lephare_config = _get_sub_config(self.config, 'lephare.')
+        self.lephare_config = _get_sub_config(self.config, "lephare.")
 
         # Put something in place to allow for not rerunning the prepare stage
         try:
@@ -164,10 +163,10 @@ class LephareInformer(CatInformer):
         # Get number of sources
         ngal = len(training_data[self.config.ref_band])
 
-        star_config = _get_sub_config(self.config, 'star.')
-        gal_config = _get_sub_config(self.config, 'gal.')
-        qso_config = _get_sub_config(self.config, 'qso.')
-        
+        star_config = _get_sub_config(self.config, "star.")
+        gal_config = _get_sub_config(self.config, "gal.")
+        qso_config = _get_sub_config(self.config, "qso.")
+
         # The three main lephare specific inform tasks
         if self.do_prepare:
             lp.prepare(
@@ -185,15 +184,11 @@ class LephareInformer(CatInformer):
         self.szs = training_data[self.config.redshift_col]
 
         # Run auto adapt on training sample
-        input = _rail_to_lephare_input(
+        input_table = _rail_to_lephare_input(
             training_data, self.config.bands, self.config.err_bands
         )
         # This will return zeros if AUTO_ADAPT is NO
-        offsets = lp.calculate_offsets_from_input(self.lephare_config, input)
-        # We must make a string dictionary to allow pickling and saving
-        lephare_config = lp.keymap_to_string_dict(
-            lp.all_types_to_keymap(self.lephare_config)
-        )
+        offsets = lp.calculate_offsets_from_input(self.lephare_config, input_table)
         # Give principle inform config 'model' to instance.
         self.model = dict(
             lephare_version=lp.__version__,
@@ -272,6 +267,11 @@ class LephareEstimator(CatEstimator):
                 "is to facilitate manually moving intermediate files."
             ),
         ),
+        write_outputs=Param(
+            bool,
+            False,
+            msg="Whether to write the output files.",
+        ),
     )
     _add_sub_config(config_options, lsst_default_config, "lephare.")
 
@@ -288,10 +288,7 @@ class LephareEstimator(CatEstimator):
             self.lephare_config = self.model["lephare_config"]
         else:
             self.lephare_config = _get_sub_config(self.config, "lephare.")
-        # Use string dictionary config in case keymap passed to estimate stage
-        self.lephare_config = lp.keymap_to_string_dict(
-            lp.all_types_to_keymap(self.lephare_config)
-        )
+
         Z_STEP = self.model["lephare_config"]["Z_STEP"]
         self.lephare_config["Z_STEP"] = Z_STEP
         self.dz = float(Z_STEP.split(",")[0])
@@ -310,12 +307,20 @@ class LephareEstimator(CatEstimator):
         Run the equivalent of zphota and get the PDF for every source.
         """
         # Create the lephare input table
-        input = _rail_to_lephare_input(data, self.config.bands, self.config.err_bands)
+        input_table = _rail_to_lephare_input(
+            data, self.config.bands, self.config.err_bands
+        )
         # Set the desired offsets estimate config overide lephare config overide inform offsets
         if self.config["use_inform_offsets"] and self.model["offsets"] is not None:
             offsets = self.model["offsets"]
             self.lephare_config["APPLY_SYSSHIFT"] = ",".join([str(o) for o in offsets])
-        output, photozlist = lp.process(self.lephare_config, input)
+
+        output, photozlist = lp.process(
+            self.lephare_config,
+            input_table,
+            write_outputs=self.config["write_outputs"],
+        )
+
         ng = data[self.config.bands[0]].shape[0]
         # Unpack the pdfs for galaxies
         pdfs = []
@@ -340,6 +345,8 @@ class LephareEstimator(CatEstimator):
         ancil = dict(zmode=zmode, zmean=zmean)
         # Add the requested outputs.
         for c in self.config["output_keys"]:
+            if output[c].dtype.kind in ["U", "O"]:
+                output[c] = output[c].astype("S")
             ancil[c] = np.array(output[c])
         qp_dstn.set_ancil(ancil)
         self._do_chunk_output(qp_dstn, start, end, first, data=data)
@@ -359,41 +366,41 @@ def _rail_to_lephare_input(data, mag_cols, mag_err_cols):
 
     Returns
     =======
-    input : astropy.table.Table
+    input_table : astropy.table.Table
         The lephare input
 
 
     """
     ng = data[mag_cols[0]].shape[0]
     # Make input catalogue in standard lephare format
-    input = Table()
+    input_table = Table()
     try:
-        input["id"] = data["id"]
+        input_table["id"] = data["id"]
     except KeyError:
-        input["id"] = np.arange(ng)
+        input_table["id"] = np.arange(ng)
     # Add all available magnitudes
 
     context = np.full(ng, 0)
     for n in np.arange(len(mag_cols)):
-        input[mag_cols[n]] = data[mag_cols[n]].T
-        input[mag_err_cols[n]] = data[mag_err_cols[n]].T
+        input_table[mag_cols[n]] = data[mag_cols[n]].T
+        input_table[mag_err_cols[n]] = data[mag_err_cols[n]].T
         # Shall we allow negative fluxes?
-        mask = input[mag_cols[n]] > 0
-        mask &= ~np.isnan(input[mag_cols[n]])
-        mask &= input[mag_err_cols[n]] > 0
-        mask &= ~np.isnan(input[mag_err_cols[n]])
+        mask = input_table[mag_cols[n]] > 0
+        mask &= ~np.isnan(input_table[mag_cols[n]])
+        mask &= input_table[mag_err_cols[n]] > 0
+        mask &= ~np.isnan(input_table[mag_err_cols[n]])
         context += mask * 2**n
     # Set context to data value if set or else exclude all negative and nan values
     try:
-        input["context"] = data["context"]
+        input_table["context"] = data["context"]
     except KeyError:
-        input["context"] = context
+        input_table["context"] = context
     try:
-        input["zspec"] = data["redshift"]
+        input_table["zspec"] = data["redshift"]
     except KeyError:
-        input["zspec"] = np.full(ng, -99.0)
-    input["string_data"] = " "
-    return input
+        input_table["zspec"] = np.full(ng, -99.0)
+    input_table["string_data"] = " "
+    return input_table
 
 
 def _update_lephare_env(lepharedir, lepharework):
