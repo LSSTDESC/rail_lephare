@@ -127,7 +127,7 @@ class LephareInformer(CatInformer):
         self.nzbins = self.config["nzbins"]
         self.dz = (self.zmax - self.zmin) / (self.nzbins - 1)
         Z_STEP = f"{self.dz},{self.zmin},{self.zmax}"
-        print(
+        self.log.info(
             f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params."
         )
         self.config["lephare.Z_STEP"] = Z_STEP
@@ -176,7 +176,7 @@ class LephareInformer(CatInformer):
                 qso_config=qso_config,
             )
         else:
-            print(
+            self.log.info(
                 f"do_prepare set to False, using precomputed files in {self.run_dir}."
             )
 
