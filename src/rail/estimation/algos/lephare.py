@@ -111,8 +111,6 @@ class LephareInformer(CatInformer):
         super().__init__(args, **kwargs)
 
     def validate(self):
-        self.lephare_config = _get_sub_config(self.config, "lephare.")
-
         # Put something in place to allow for not rerunning the prepare stage
         try:
             self.do_prepare = self.config["do_prepare"]
@@ -131,6 +129,9 @@ class LephareInformer(CatInformer):
             f"rail_lephare is setting the Z_STEP config to {Z_STEP} based on the informer params."
         )
         self.config["lephare.Z_STEP"] = Z_STEP
+        # Extract the lephare sub-config only now, so that it contains the
+        # redshift grid set above rather than the lephare default Z_STEP.
+        self.lephare_config = _get_sub_config(self.config, "lephare.")
         # We create a run directory with the informer name
         self.run_dir = _set_run_dir(self.config["name"])
 
