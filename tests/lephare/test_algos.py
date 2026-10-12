@@ -26,6 +26,25 @@ def test_informer_basic():
     assert inform_lephare.config["lephare.Z_STEP"] == "0.01,0.0,3.0"
 
 
+def test_informer_zstep_propagated_to_lephare_config():
+    """The redshift grid set from zmin, zmax and nzbins must end up in the
+    lephare config that is used by prepare and stored in the model, not only
+    in the stage config."""
+    inform_lephare = LephareInformer.make_stage(
+        name="inform_Lephare_zstep",
+        nondetect_val=np.nan,
+        model="lephare_zstep.pkl",
+        hdf5_groupname="",
+        zmin=0.0,
+        zmax=6.0,
+        nzbins=601,
+    )
+
+    inform_lephare.validate()
+    assert inform_lephare.config["lephare.Z_STEP"] == "0.01,0.0,6.0"
+    assert inform_lephare.lephare_config["Z_STEP"] == "0.01,0.0,6.0"
+
+
 def test_informer_and_estimator(test_data_dir: str):
     trainFile = os.path.join(test_data_dir, "output_table_conv_train.hdf5")
     testFile = os.path.join(test_data_dir, "output_table_conv_test.hdf5")
