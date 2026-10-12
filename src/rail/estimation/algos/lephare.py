@@ -15,6 +15,7 @@ from rail.estimation.estimator import CatEstimator, CatInformer
 lsst_default_config = lp.default_cosmos_config.copy()
 lsst_default_config.update(
     {
+        "VERBOSE": "NO",
         "CAT_IN": "undefined",
         "ERR_SCALE": "0.02",
         "FILTER_CALIB": "0",
@@ -27,6 +28,8 @@ lsst_default_config.update(
         "INP_TYPE": "M",
         "MABS_CONTEXT": "0",
         "MABS_REF": "1",
+        "MAG_REF": "2",
+        "MAG_ABS_QSO": "-30,-20.5",
         "QSO_LIB": "LSST_QSO_BIN",
         "QSO_LIB_IN": "LSST_QSO_BIN",
         "QSO_LIB_OUT": "LSST_QSO_MAG",
@@ -34,6 +37,32 @@ lsst_default_config.update(
         "STAR_LIB_IN": "LSST_STAR_BIN",
         "STAR_LIB_OUT": "LSST_STAR_MAG",
         "ZPHOTLIB": "LSST_STAR_MAG,LSST_GAL_MAG,LSST_QSO_MAG",
+        "Z_STEP": "0.02,0.,6.",
+    }
+)
+
+lsst_phys_config = lsst_default_config.copy()
+
+lsst_phys_config.update(
+    {
+        # In order to get the physical parameters you need to use
+        # Composite Stellar Population synthesis models. Here Bruzual & Charlot (2003).
+        # This can be done only for galaxies.
+        "GAL_SED": "$LEPHAREDIR/sed/GAL/BC03_CHAB/BC03COMB_MOD.list",
+        "GAL_LIB": "LIB_BC03",
+        "SEL_AGE": "$LEPHAREDIR/sed/GAL/BC03_CHAB/AGE_BC03COMB.dat",
+        # Library
+        "GAL_LIB_IN":"LIB_BC03",
+        "GAL_LIB_OUT":"BC03_LSST",
+        "MOD_EXTINC": "0,12,0,12",
+        "EXTINC_LAW": "SB_calzetti.dat,SMC_prevot.dat",
+        "EM_LINES": "PHYS",
+        "EM_DISPERSION": "1.",
+        # FIT
+        # We set the redshift to the spec-z value
+        "ZPHOTLIB":"BC03_LSST",
+        "ZFIX": "YES",
+        "SPEC_OUT": "spec_phys",  # We would like to see the output
     }
 )
 

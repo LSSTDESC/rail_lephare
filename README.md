@@ -15,12 +15,6 @@ Full documentation is available at the main [LePHARE documentation](https://leph
 pip install pz-rail-lephare
 ```
 
-## RAIL: Redshift Assessment Infrastructure Layers
-
-This package is part of the larger ecosystem of Photometric Redshifts
-in [RAIL](https://github.com/LSSTDESC/RAIL). This package in particular
-is concerned with wrapping the [LePHARE](https://gitlab.lam.fr/Galaxies/LEPHARE/) template fitting code within RAIL.
-
 ### Developer installation
 
 This package can be installed from source using the following commands to allow working on the code.
@@ -30,6 +24,17 @@ cd rail_lephare
 conda install -c conda-forge pytables
 pip install -e '.[dev]'
 ```
+
+### Citing this package
+
+If you use this package please cite [Shirley et al. 2026](https://arxiv.org/abs/2608.30494). You should also cite RAIL and the appropriate papers for each
+code used. 
+
+## RAIL: Redshift Assessment Infrastructure Layers
+
+This package is part of the larger ecosystem of Photometric Redshifts
+in [RAIL](https://github.com/LSSTDESC/RAIL). This package in particular
+is concerned with wrapping the [LePHARE](https://github.com/lephare-photoz/lephare/) template fitting code within RAIL.
 
 ### Citing RAIL
 
@@ -54,12 +59,4 @@ archivePrefix = {arXiv},
 }
 ```
 Please consider also inviting the developers as co-authors on publications resulting from your use of RAIL by [making an issue](https://github.com/LSSTDESC/rail/issues/new/choose).
-A convenient list of what to cite may be found under [Citing RAIL](https://rail-hub.readthedocs.io/en/latest/source/citing.html) on ReadTheDocs.
-Additionally, several of the codes accessible through the RAIL ecosystem must be cited if used in a publication.
-
-### Citing this package
-
-If you use this package, you should also cite the appropriate papers for each
-code used.  A list of such codes is included in the 
-[Citing RAIL](https://lsstdescrail.readthedocs.io/en/stable/source/citing.html)
-section of the main RAIL Read The Docs page.
+A convenient list of what to cite may be found under [Citing RAIL](https://rail-hub.readthedocs.io/en/latest/source/user_guide/citations.html) on ReadTheDocs.
